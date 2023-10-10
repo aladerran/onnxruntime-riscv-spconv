@@ -259,19 +259,19 @@ int main(int argc, char* argv[]) {
   printf("Number of outputs = %zu\n", num_output_nodes);
   std::vector<const char*> output_node_names(num_output_nodes);
   for (size_t i = 0; i < num_output_nodes; i++) {
-    // print input node names
+    // print output node names
     char* output_name = session.GetOutputName(i, allocator);
     printf("Output %ld : name=%s, ", i, output_name);
     output_node_names[i] = output_name;
 
-    // print input node types
+    // print output node types
     Ort::TypeInfo type_info = session.GetOutputTypeInfo(i);
     auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
 
     ONNXTensorElementDataType type = tensor_info.GetElementType();
     printf("type=%d, ", type);
 
-    // print input shapes/dims
+    // print output shapes/dims
     std::vector<int64_t> output_node_dims = tensor_info.GetShape();
     printf("num_dims=%zu: [", output_node_dims.size());
     for (size_t j = 0; j < output_node_dims.size(); j++) {

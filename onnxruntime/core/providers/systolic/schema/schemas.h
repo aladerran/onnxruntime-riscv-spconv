@@ -327,6 +327,7 @@ void RegisterSystolicTrainingSchemas() {
           "I",
           {"tensor(int64)"},
           "Constrain index tensor to int64");
+  // TODO add training schemas for spconv
 }
 
 void RegisterSystolicSchemas() {
@@ -550,6 +551,77 @@ void RegisterSystolicSchemas() {
           }
         }
       });
+
+      
+      ONNX_SYSTOLIC_OPERATOR_SCHEMA(SpConv)
+      .SinceVersion(14)
+      .SetDoc("SpConv Demo")
+      .Input(0, "0", "InputCoords", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
+      .Input(1, "1", "InputFeats", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(2, "2", "InputStride", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
+      .Input(3, "3", "Weight", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(4, "4", "Bias", "T", OpSchema::Optional, true, 1, OpSchema::Differentiable)
+      .Input(5, "5", "input OutputCoords", "I", OpSchema::Optional, true, 1, OpSchema::NonDifferentiable)
+      .Input(6, "6", "input Nbmaps", "I", OpSchema::Optional, true, 1, OpSchema::NonDifferentiable)
+      .Input(7, "7", "input Nbsizes", "I", OpSchema::Optional, true, 1, OpSchema::NonDifferentiable)
+      .Input(8, "8", "input SizesIO", "I", OpSchema::Optional, true, 1, OpSchema::NonDifferentiable)
+
+      .Output(0, "0", "OutputCoords", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
+      .Output(1, "1", "OutputFeats", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Output(2, "2", "OutputStride", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
+      .Output(3, "3", "output Nbmaps", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
+      .Output(4, "4", "output Nbsizes", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
+      .Output(5, "5", "output SizesIO", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
+      
+      .TypeConstraint("T", {"tensor(float16)", "tensor(float)", "tensor(double)"}, "Constraint to float")
+      .TypeConstraint("I", {"tensor(int8)", "tensor(int64)", "tensor(int32)"}, "Constraint to int")
+
+      .Attr("kernel_shape", "", AttributeProto::INTS, OPTIONAL_VALUE)
+      .Attr("strides", "", AttributeProto::INTS, OPTIONAL_VALUE)
+      .Attr("dilations", "", AttributeProto::INTS, OPTIONAL_VALUE)
+      .Attr("transposed", "", AttributeProto::INT, static_cast<int64_t>(0))
+
+      // TODO: add shape inference
+      .TypeAndShapeInferenceFunction([](InferenceContext& ctx) {
+        int inputcoords_idx = 0;
+        int inputfeats_idx = 1;
+        int inputstrides_idx = 2;
+        int weight_idx = 3;
+        /*
+        int bias_idx = 4;
+        int outputcoords_i_idx = 5;
+        int nbmaps_i_idx = 6;
+        int nbsizes_i_idx =7;
+        int sizes_io_i_idx = 8;
+
+        int outputcoords_idx = 0;
+        int outputfeats_idx = 1;
+        int outputstrides_idx = 2;
+        int nbmaps_o_idx = 3;
+        int nbsizes_o_idx = 4;
+        int sizes_io_o_idx = 5;
+        */
+        
+        auto inputcoords_type = ctx.getInputType(inputcoords_idx);
+        auto inputfeats_type = ctx.getInputType(inputfeats_idx);
+        auto inputstrides_type = ctx.getInputType(inputstrides_idx);
+        auto weight_type = ctx.getInputType(weight_idx);
+        // 
+        if (nullptr == inputcoords_type || nullptr == inputfeats_type ||
+            nullptr == inputstrides_type || nullptr == weight_type ||
+            inputcoords_type->value_case() != TypeProto::kTensorType ||
+            inputfeats_type->value_case() != TypeProto::kTensorType ||
+            inputstrides_type->value_case() != TypeProto::kTensorType ||
+            weight_type->value_case() != TypeProto::kTensorType) {
+          fail_type_inference("inputs are expected to have tensor type.");
+        }
+
+        propagateElemTypeFromInputToOutput(ctx, 0, 0);
+        propagateElemTypeFromInputToOutput(ctx, 1, 1);
+        propagateElemTypeFromInputToOutput(ctx, 2, 2);
+      });
+
+
 }
 
 }  // namespace systolic

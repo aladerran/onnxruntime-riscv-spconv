@@ -553,9 +553,9 @@ void RegisterSystolicSchemas() {
       });
 
       
-      ONNX_SYSTOLIC_OPERATOR_SCHEMA(SpConv)
+      ONNX_SYSTOLIC_OPERATOR_SCHEMA(SpConv3d)
       .SinceVersion(14)
-      .SetDoc("SpConv Demo")
+      .SetDoc("SpConv3d Demo")
       .Input(0, "0", "InputCoords", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
       .Input(1, "1", "InputFeats", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
       .Input(2, "2", "InputStride", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
@@ -580,7 +580,6 @@ void RegisterSystolicSchemas() {
       .Attr("strides", "", AttributeProto::INTS, OPTIONAL_VALUE)
       .Attr("dilations", "", AttributeProto::INTS, OPTIONAL_VALUE)
       .Attr("transposed", "", AttributeProto::INT, static_cast<int64_t>(0))
-
       // TODO: add shape inference
       .TypeAndShapeInferenceFunction([](InferenceContext& ctx) {
         int inputcoords_idx = 0;

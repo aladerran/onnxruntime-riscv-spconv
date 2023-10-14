@@ -154,7 +154,9 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
   const bool only_execute_path_to_fetches = false;
 #endif
 
-  LOGS(logger, INFO) << "Begin execution";
+  std::cout << "start log sequential begin Execution" << std::endl;// for debugging purposes-zxr
+  // LOGS(logger, INFO) << "Begin execution"; 
+  std::cout << "end log begin Execution" << std::endl;// for debugging purposes-zxr
   const SequentialExecutionPlan& seq_exec_plan = *session_state.GetExecutionPlan();
   const auto& exec_plan_vec = seq_exec_plan.execution_plan;
   VLOGS(logger, 1) << "Size of execution plan vector: " << exec_plan_vec.size();

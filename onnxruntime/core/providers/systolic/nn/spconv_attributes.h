@@ -8,8 +8,8 @@
 namespace onnxruntime {
 
 // A helper struct holding attributes for Conv-family ops
-struct ConvAttributes {
-  explicit ConvAttributes(const OpNodeProtoHelper<ProtoHelperNodeContext>& info) {
+struct SpConvAttributes {
+  explicit SpConvAttributes(const OpNodeProtoHelper<ProtoHelperNodeContext>& info) {
 
     kernel_shape_specified = info.GetAttrs<int64_t>("kernel_shape", kernel_shape_).IsOK();
 
@@ -23,14 +23,14 @@ struct ConvAttributes {
       dilations.resize(kernel_shape_.size(), 1);
     }
 
-    status = info.GetAttr<int64_t>("transposed", &transposed); //? 取地址？ bool类型写法？
+    status = info.GetAttr<int64_t>("transposed", &transposed); 
     if (!status.IsOK() || dilations.empty()) {
       transposed = 0 ;
     }
 
   }
 
-  ~ConvAttributes() = default;
+  ~SpConvAttributes() = default;
 
   Status ComputeKernelShape(const TensorShape& weight_shape, std::vector<int64_t>& kernel_shape) const {
     if (kernel_shape_specified) {
@@ -59,15 +59,15 @@ struct ConvAttributes {
 
   Status ValidateInputShape(const  TensorShape& coords_shape, const  TensorShape& feats_shape, 
                             const  TensorShape& strides_shape, const  TensorShape& weight_shape) const {
-    if (coords_shape.NumDimensions() !=2 || coords_shape[1] != 3 ){
-        return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "InputCoords expects a N x 3 Tensor which has 2 dims, ",
+    if (coords_shape.NumDimensions() !=2 || coords_shape[1] != 4 ){
+        return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "InputCoords expects a N x 4 Tensor which has 2 dims, ",
                              " got InputCoords shape: ", coords_shape.ToString().c_str());
     }
     if (feats_shape.NumDimensions() !=2 || feats_shape[1] != 4 ){
         return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "InputFeats expects a N x 4 Tensor which has 2 dims, ",
                              " got InputFeats shape: ", feats_shape.ToString().c_str());
     }
-    if (strides_shape.NumDimensions() !=1 || strides_shape[1] != 3 ){
+    if (strides_shape.NumDimensions() !=1 || strides_shape[0] != 3 ){
         return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "InputStrides expects a 1 x 3 Tensor , ",
                              " got InputStrides shape: ", strides_shape.ToString().c_str());
     }
@@ -81,10 +81,10 @@ struct ConvAttributes {
                              " InputCoords: ", coords_shape.ToString().c_str(),
                              " InputFeats: ", weight_shape.ToString().c_str());
     }
-    if( coords_shape[1] != weight_shape[1] ){
-      return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "width(in channels) of InputCoords does not match " \
+    if( feats_shape[1] != weight_shape[1] ){
+      return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "width(in channels) of InputFeats does not match " \
                              "that of Weight.",
-                             " InputCoords: ", coords_shape.ToString().c_str(),
+                             " InputCoords: ", feats_shape.ToString().c_str(),
                              " Weight: ", weight_shape.ToString().c_str());
     }
     // ignore checking weight[0], the 'kernel volume', it will be done in the above function ComputeKernelShape

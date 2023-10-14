@@ -54,11 +54,57 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   Tensor* OutputCoords = context->Output(0, InputCoords->Shape());
   Tensor* OutputFeasts = context->Output(1, InputFeats->Shape());
   Tensor* OutputStrides = context->Output(2, InputStrides->Shape());
-  std::vector<int64_t> test_shape = {20, 2};
-  std::vector<int64_t> test_shape1 = {1,2};
+  std::vector<int64_t> test_shape({20, 2});
+  std::vector<int64_t> test_shape1({1,2});
   Tensor* Nbmaps_o = context->Output(3, test_shape);
   Tensor* Nbsizes_o = context->Output(4, test_shape);
-  Tensor* SizesIO_o = context->Output(3, test_shape1); 
+  Tensor* SizesIO_o = context->Output(5, test_shape1); 
+
+  
+
+  const long* input_coords_data = InputCoords->template Data<int64_t>();
+  const float* input_feats_data = InputFeats->template Data<float>();
+  const long* input_strides_data = InputStrides->template Data<int64_t>();
+  const float* weight_data = Weight->template Data<float>();
+
+  
+
+
+
+  std::cout << "print input data" << std::endl;
+  std::cout << "input_coords_data:" << std::endl;
+  for (size_t i = 0; i < InputCoords->Shape()[0]; i++){
+    for (size_t j = 0; j < InputCoords->Shape()[1]; j++){
+      std::cout << input_coords_data[i * InputCoords->Shape()[1] + j] << " ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << "input_feats_data:" << std::endl;
+  for (size_t i = 0; i < InputFeats->Shape()[0]; i++){
+    for (size_t j = 0; j < InputFeats->Shape()[1]; j++){
+      std::cout << input_feats_data[i * InputFeats->Shape()[1] + j] << " ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << "input_strides_data:" << std::endl;
+  for (size_t i = 0; i < InputStrides->Shape()[0]; i++){
+    std::cout << input_strides_data[i] << " ";
+  }
+  std::cout << std::endl;
+  std::cout << "weight_data:" << std::endl;
+  for (size_t i = 0; i < Weight->Shape()[0]; i++){
+    for (size_t j = 0; j < Weight->Shape()[1]; j++){
+      for (size_t k = 0; k < Weight->Shape()[2]; k++){
+        std::cout << weight_data[ (i * Weight->Shape()[0] + j) * Weight->Shape()[1] + k] << " " << std::endl;
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
+
+  std::cout << conv_attrs_.
+
+
 
 
   return Status::OK();

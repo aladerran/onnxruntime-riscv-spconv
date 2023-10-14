@@ -24,7 +24,10 @@ def _ort_constant_for_domain(domain: str):
     # This list is limited to just the domains we have processors for
     domain_to_constant_map = {'ai.onnx': 'kOnnxDomain',
                               'ai.onnx.ml': 'kMLDomain',
-                              'com.microsoft': 'kMSDomain'}
+                              'com.microsoft': 'kMSDomain',
+                              
+                            #   'customdemo': 'kCustomDemoDomain' #// for debugging purposes-zxr
+                              }
 
     if domain not in domain_to_constant_map:
         raise ValueError('Domain {} not found in map to ONNX Runtime constant. Please update map.'.format(domain))

@@ -18,7 +18,7 @@ class SpConv3d : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 
  private:
-  ConvAttributes conv_attrs_;
+  SpConvAttributes conv_attrs_;
   bool fused_relu_ = false;
 };
 

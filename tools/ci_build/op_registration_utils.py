@@ -31,7 +31,10 @@ def map_ort_constant_to_domain(ort_constant_name: str):
                               'kMSFeaturizersDomain': 'com.microsoft.mlfeaturizers',
                               'kMSDmlDomain': 'com.microsoft.dml',
                               'kNGraphDomain': 'com.intel.ai',
-                              'kVitisAIDomain': 'com.xilinx'}
+                              'kVitisAIDomain': 'com.xilinx', 
+                              
+                            #   'kCustomDemoDomain':'customdemo', #// for debugging purposes-zxr
+                              }
 
     if ort_constant_name in constant_to_domain_map:
         return constant_to_domain_map[ort_constant_name]

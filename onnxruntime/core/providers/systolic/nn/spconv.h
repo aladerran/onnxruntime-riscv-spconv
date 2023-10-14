@@ -18,6 +18,13 @@ class SpConv3d : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 
  private:
+
+  Status BuildKmap(const Tensor* InputCoords, const Tensor* InputStrides, const Tensor* Nbmaps, 
+                    const Tensor* Nbsizes, const Tensor* OutputCoords ) const ;
+
+  Status ConvolutionForward(const Tensor* OutputFeats, const Tensor* InputFeats, const Tensor* Weight, 
+                            const Tensor* Nbmaps, const Tensor* Nbsizes, const Tensor* Sizes_IO) const;
+
   SpConvAttributes conv_attrs_;
   bool fused_relu_ = false;
 };

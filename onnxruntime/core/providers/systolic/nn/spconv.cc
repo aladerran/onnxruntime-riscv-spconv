@@ -24,10 +24,10 @@ ONNX_OPERATOR_KERNEL_EX(
 
 template <typename T>
 Status SpConv3d<T>::Compute(OpKernelContext* context) const {
-  const auto* InputCoords = context->Input<Tensor>(0);
-  const auto* InputFeats = context->Input<Tensor>(1);
-  const auto* InputStrides = context->Input<Tensor>(2);
-  const auto* Weight = context->Input<Tensor>(3);
+  const Tensor* InputCoords = context->Input<Tensor>(0);
+  const Tensor* InputFeats = context->Input<Tensor>(1);
+  const Tensor* InputStrides = context->Input<Tensor>(2);
+  const Tensor* Weight = context->Input<Tensor>(3);
   const Tensor* Bias = context->Input<Tensor>(4);             // optional. nullptr if not provided
   const Tensor* OutputCoords_i = context->Input<Tensor>(5);   // optional. nullptr if not provided
   const Tensor* Nbmaps_i = context->Input<Tensor>(6);         // optional. nullptr if not provided
@@ -35,10 +35,10 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   const Tensor* SizesIO_i = context->Input<Tensor>(8);        // optional. nullptr if not provided
     // OutputCoords_i, Nbmaps_i, Nbsizes_i, SizesIO_i should be provided togather, or none of them is provided
 
-  ORT_RETURN_IF_ERROR(conv_attrs_.ValidateInputShape(InputCoords, InputFeats, InputStrides, Weight));
+  ORT_RETURN_IF_ERROR(conv_attrs_.ValidateSpInputShape(InputCoords, InputFeats, InputStrides, Weight));
 
   std::vector<int64_t> kernel_shape;
-  ORT_RETURN_IF_ERROR(conv_attrs_.ComputeKernelShape(Weight->Shape(), kernel_shape));
+  ORT_RETURN_IF_ERROR(conv_attrs_.ComputeSpKernelShape(Weight->Shape(), kernel_shape));
 
   std::vector<int64_t> dilations(conv_attrs_.dilations);
   if (dilations.empty()) {
@@ -69,7 +69,7 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
 
   
 
-
+// ----------------------------------------------------------------
 
   std::cout << "print input data" << std::endl;
   std::cout << "input_coords_data:" << std::endl;
@@ -104,11 +104,40 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
 
   std::cout << conv_attrs_.
 
+//----------------------------------------------------------------
+
+  if ( !transposed ){
+    ORT_RETURN_IF_ERROR(BuildKmap(InputCoords, InputStrides, Nbmaps_o, Nbsizes_o, OutputCoords));
+
+  }else {
+    std::cout << "transposed case not yet implemented" << std::endl;
+  }
+
+
 
 
 
   return Status::OK();
 }
+
+
+
+template <typename T>
+Status SpConv3d<T>::BuildKmap(const Tensor* InputCoords, const Tensor* InputStrides, 
+                              const Tensor* Nbmaps, const Tensor* Nbsizes, 
+                              const Tensor* OutputCoords) const {
+  //TODO
+  
+  return Status();
+}
+
+template <typename T>
+Status SpConv3d<T>::ConvolutionForward(const Tensor* OutputFeats, const Tensor* InputFeats, const Tensor* Weight, 
+                                        const Tensor* Nbmaps, const Tensor* Nbsizes, const Tensor* Sizes_IO) const {
+  return Status();
+}
+
+void 
 
 }  // namespace systolic
 }  // namespace onnxruntime

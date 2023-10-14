@@ -32,7 +32,7 @@ struct SpConvAttributes {
 
   ~SpConvAttributes() = default;
 
-  Status ComputeKernelShape(const TensorShape& weight_shape, std::vector<int64_t>& kernel_shape) const {
+  Status ComputeSpKernelShape(const TensorShape& weight_shape, std::vector<int64_t>& kernel_shape) const {
     if (kernel_shape_specified) {
       kernel_shape = kernel_shape_;
       if ( kernel_shape.size() != 3 ){
@@ -57,7 +57,7 @@ struct SpConvAttributes {
     return Status::OK();
   }
 
-  Status ValidateInputShape(const  TensorShape& coords_shape, const  TensorShape& feats_shape, 
+  Status ValidateSpInputShape(const  TensorShape& coords_shape, const  TensorShape& feats_shape, 
                             const  TensorShape& strides_shape, const  TensorShape& weight_shape) const {
     if (coords_shape.NumDimensions() !=2 || coords_shape[1] != 4 ){
         return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "InputCoords expects a N x 4 Tensor which has 2 dims, ",

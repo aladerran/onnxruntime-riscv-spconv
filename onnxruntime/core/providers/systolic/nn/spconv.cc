@@ -52,7 +52,7 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
 
 
   Tensor* OutputCoords = context->Output(0, InputCoords->Shape());
-  Tensor* OutputFeasts = context->Output(1, InputFeats->Shape());
+  Tensor* OutputFeats = context->Output(1, InputFeats->Shape());
   Tensor* OutputStrides = context->Output(2, InputStrides->Shape());
   std::vector<int64_t> test_shape({20, 2});
   std::vector<int64_t> test_shape1({1,2});
@@ -108,8 +108,24 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
 
   if ( !transposed ){
     ORT_RETURN_IF_ERROR(BuildKmap(InputCoords, InputStrides, Nbmaps_o, Nbsizes_o, OutputCoords));
+    int64_t size_i = InputCoords->Shape()[0];
+    int64_t size_o = OutputCoords->Shape()[0];
+    const long* sizes_io_data = SizesIO_o -> MutableData<int64_t>();
+    size_io_data[0] = size_i;
+    size_io_data[1] = size_o;
+    ORT_RETURN_IF_ERROR(ConvolutionForward(OutputFeats, InputFeats, Weight, Nbmaps_o, Nbsizes_o, SizesIO_o));
+
+
 
   }else {
+    ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(OutputCoords_i, OutputCoords));
+    ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbmaps_i, Nbmaps_o));
+    ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
+    ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
+    ORT_RETURN_IF_ERROR(ConvolutionForward(OutputFeats, InputFeats, Weight, Nbmaps_o, Nbsizes_o, SizesIO_o));
+
+
+
     std::cout << "transposed case not yet implemented" << std::endl;
   }
 
@@ -128,16 +144,40 @@ Status SpConv3d<T>::BuildKmap(const Tensor* InputCoords, const Tensor* InputStri
                               const Tensor* OutputCoords) const {
   //TODO
   
-  return Status();
+  return Status::OK();
 }
 
 template <typename T>
 Status SpConv3d<T>::ConvolutionForward(const Tensor* OutputFeats, const Tensor* InputFeats, const Tensor* Weight, 
                                         const Tensor* Nbmaps, const Tensor* Nbsizes, const Tensor* Sizes_IO) const {
-  return Status();
+  return Status::OK();
 }
 
-void 
+template <typename T>
+Status SpConv3d<T>::PropagateTensorDataFromInputToOutput(const Tensor* X, Tensor* Y) const {
+  // auto Input_ml_type = context->InputType(0);
+  // if (Input_ml_type != DataTypeImpl::GetType<Tensor>()) {
+  //   return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "propagateTensorDataFromInputToOutput expects a Tensor, got other type.");
+  // } 
+  ORT_ENFORCE(X != nullptr);
+  const TensorShape& shape = X->Shape();
+  auto X_type = X->DataType();
+
+  const void* source = X->DataRaw(X_type);
+  void* target = Y->MutableDataRaw(X_type);
+  //If source and target pointers are not equal, we need to copy the data.
+  if (target != source) {
+    if (!X->IsDataTypeString()) {
+      memcpy(target, source, shape.Size() * X_type->Size());
+    } else {
+      // handle std::string
+      const auto* src = X->template Data<std::string>();
+      auto* dst = Y->template MutableData<std::string>();
+      std::copy(src, src + shape.Size(), dst);
+    }
+  }
+  return Status::OK();
+}
 
 }  // namespace systolic
 }  // namespace onnxruntime

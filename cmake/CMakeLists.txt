@@ -60,7 +60,7 @@ option(onnxruntime_USE_NNAPI_BUILTIN "Build with builtin NNAPI lib for Android N
 option(onnxruntime_USE_RKNPU "Build with RKNPU support" OFF)
 option(onnxruntime_USE_DNNL "Build with DNNL support" OFF)
 option(onnxruntime_USE_FEATURIZERS "Build ML Featurizers support" OFF)
-option(onnxruntime_USE_SYSTOLIC "Whether to use Systolic to accelerate matmul" OFF)
+option(onnxruntime_USE_SYSTOLIC "Whether to use Systolic to accelerate matmul" ON)
 option(onnxruntime_USE_HWACHA "Whether to build with Hwacha support" OFF)
 option(onnxruntime_FOR_FIRESIM "Whether to build for Firesim benchmarking" OFF)
 option(onnxruntime_SYSTOLIC_INT8 "If Systolic is enabled, whether to use for int8 ops" OFF)

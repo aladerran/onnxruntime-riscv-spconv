@@ -114,7 +114,10 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     size_io_data[0] = size_i;
     size_io_data[1] = size_o;
     ORT_RETURN_IF_ERROR(ConvolutionForward(OutputFeats, InputFeats, Weight, Nbmaps_o, Nbsizes_o, SizesIO_o));
-
+    const long* output_strides_data = OutputStridesIO-> template MutableData<int64_t>();
+    for (size_t i = 0; i < 3; i++){
+      output_strides_data[i] *= input_strides_data[i];
+    }
 
 
   }else {
@@ -123,7 +126,10 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
     ORT_RETURN_IF_ERROR(ConvolutionForward(OutputFeats, InputFeats, Weight, Nbmaps_o, Nbsizes_o, SizesIO_o));
-
+    const long* output_strides_data = OutputStridesIO-> template MutableData<int64_t>();
+    for (size_t i = 0; i < 3; i++){
+      output_strides_data[i] /= input_strides_data[i];
+    }
 
 
     std::cout << "transposed case not yet implemented" << std::endl;

@@ -6,6 +6,11 @@
 #include <algorithm>
 #include <vector>
 #include <google/dense_hash_map>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wunused-function"
 #include "systolic_include.h"
 
 
@@ -47,7 +52,6 @@ void scatter_cpu(const int n_in, const int n_out, const int c,
         if (out_pos < 0) {
             continue;
         }
-#pragma omp parallel for
         for (int j = 0; j < c; j++) {
             out_feat[out_pos * c + j] += in_feat[i * c + j];
         }
@@ -62,7 +66,6 @@ void gather_cpu(const int n_k, const int n_in, const int c,
         if (in_pos < 0) {
             continue;
         }
-#pragma omp parallel for
         for (int j = 0; j < c; j++) {
             out_feat[i * c + j] = in_feat[in_pos * c + j];
         }
@@ -117,7 +120,6 @@ void convolution_forward_cpu(float *in_feat, float *out_feat,
 
 
 void cpu_hash_wrapper(int N, const int* data, int64_t* out) {
-#pragma omp parallel for
     for (int i = 0; i < N; i++) {
         uint64_t hash = 14695981039346656037UL;
         for (int j = 0; j < 4; j++) {
@@ -133,7 +135,6 @@ void cpu_hash_wrapper(int N, const int* data, int64_t* out) {
 void cpu_kernel_hash_wrapper(int N, int K, const int* data,
                              const int* kernel_offset, int64_t* out) {
     for (int k = 0; k < K; k++) {
-#pragma omp parallel for
         for (int i = 0; i < N; i++) {
             int cur_coord[4];
             for (int j = 0; j < 3; j++) {
@@ -185,7 +186,6 @@ std::vector<int64_t> hash_query_cpu(const std::vector<int64_t>& hash_query,
         int64_t val = idx_target[idx] + 1;
         hashmap.insert(std::make_pair(key, val));
     }
-#pragma omp parallel for
     for (int idx = 0; idx < n1; idx++) {
         int64_t key = hash_query[idx];
         auto iter = hashmap.find(key);
@@ -196,3 +196,5 @@ std::vector<int64_t> hash_query_cpu(const std::vector<int64_t>& hash_query,
 
     return out;
 }
+
+#pragma GCC diagnostic pop

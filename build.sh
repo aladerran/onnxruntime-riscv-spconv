@@ -35,6 +35,17 @@ if [ ! -d "build/protoc" ]; then
 	curl --location "https://github.com/protocolbuffers/protobuf/releases/download/v3.16.0/protoc-3.16.0-linux-x86_64.zip" --output "build/protoc/protoc.zip"
 	cd build/protoc
 	unzip protoc.zip
+	rm -f protoc.zip
+fi
+
+cd $DIR
+
+# Download pre-compiled google sparsehash lib for RISC-V if we don't have it
+if [ ! -d "build/google" ]; then
+	cd $DIR/build
+	wget https://github.com/aladerran/sparse_conv-riscv/releases/download/backend/google.zip -O google.zip
+	unzip google.zip
+	rm -f google.zip
 fi
 
 cd $DIR

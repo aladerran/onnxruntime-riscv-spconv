@@ -375,7 +375,6 @@ endif()
 
 onnxruntime_add_static_library(onnxruntime_mlas ${mlas_common_srcs} ${mlas_platform_srcs})
 target_include_directories(onnxruntime_mlas PRIVATE ${ONNXRUNTIME_ROOT}/core/mlas/inc ${ONNXRUNTIME_ROOT}/core/mlas/lib)
-message("===============${CMAKE_BINARY_DIR}===============\n")
 target_include_directories(onnxruntime_mlas PRIVATE "${CMAKE_BINARY_DIR}/../google/include")
 set_target_properties(onnxruntime_mlas PROPERTIES FOLDER "ONNXRuntime")
 if (WIN32)

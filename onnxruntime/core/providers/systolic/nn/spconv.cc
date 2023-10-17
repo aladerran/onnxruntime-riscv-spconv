@@ -8,9 +8,6 @@
 #include "core/framework/op_kernel_context_internal.h"
 #include "core/common/safeint.h"
 #include "conv_pool_helper.h"
-#include "core/mlas/lib/systolic/systolic_sparse.cpp" 
-#include <algorithm>
-
 
 #ifdef SYSTOLIC_FP32
 
@@ -272,7 +269,7 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* OutputF
   size_t kernel_volume = conv_attrs_.kernel_shape_[0] * conv_attrs_.kernel_shape_[1] * conv_attrs_.kernel_shape_[2];
   convolution_forward_cpu(input_feats_data, output_feats_data, weight_data, nbmaps_data, nbsizes_data, 
                           const(conv_attrs_.transposed == 1), static_cast<int>(InputFeats->Shape()[0]), 
-                          static_cast<int>(OutputFeats->Shape()[0]), , WS);                           
+                          static_cast<int>(OutputFeats->Shape()[0]), static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());                           
   return Status::OK();
 }
 

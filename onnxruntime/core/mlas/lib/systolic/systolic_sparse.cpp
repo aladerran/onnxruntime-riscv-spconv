@@ -132,7 +132,7 @@ void cpu_hash_wrapper(int N, const int* data, int64_t* out) {
 }
 
 
-void cpu_kernel_hash_wrapper(int N, int K, const int* data,
+void cpu_kernel_hash_wrapper(size_t N, int K, const int* data,
                              const int* kernel_offset, int64_t* out) {
     for (int k = 0; k < K; k++) {
         for (int i = 0; i < N; i++) {
@@ -154,7 +154,7 @@ void cpu_kernel_hash_wrapper(int N, int K, const int* data,
 
 
 std::vector<int64_t> hash_cpu(const std::vector<int>& idx) {
-    int N = idx.size();
+    size_t N = idx.size();
     std::vector<int64_t> out(N);
     cpu_hash_wrapper(N, idx.data(), out.data());
     return out;

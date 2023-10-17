@@ -37,6 +37,7 @@ MLASCALL(char accelerator_mode, int batch_size, int in_dim, int in_channels,
 #endif
 
 #ifdef SYSTOLIC_FP32
+#include <vector>
 
 void SystolicMultiply
 MLASCALL(char accelerator_mode, bool relu, int dimI, int dimJ, int dimK, const float* in1, const float* in2,
@@ -112,5 +113,27 @@ void SystolicConvBackpropFilter(char accelerator_mode, int batch_size, int in_di
                   float* output,
                   bool relu,
                   float output_scale);
+
+
+// Add sparse conv backend
+
+void convolution_forward_cpu
+MLASCALL(float *in_feat, float *out_feat,
+                float *kernel, int *neighbor_map,
+                int *neighbor_offset, const bool transpose,
+                const int in_nrows, const int out_nrows,
+                const int kernel_volume, const int c, 
+                char accelerator_mode);
+
+std::vector<int64_t> hash_cpu
+MLASCALL(const std::vector<int>& idx);
+
+std::vector<int64_t> hash_query_cpu
+MLASCALL(const std::vector<int64_t>& hash_query,
+                const std::vector<int64_t>& hash_target,
+                const std::vector<int64_t>& idx_target);
+
+std::vector<int64_t> kernel_hash_cpu
+MLASCALL(const std::vector<int>& idx, const std::vector<int>& kernel_offset);
                             
 #endif

@@ -69,9 +69,9 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   // Tensor* Nbmaps_o = context->Output(3, test_shape);
   // Tensor* Nbsizes_o = context->Output(4, test_shape);
   // Tensor* SizesIO_o = context->Output(5, test_shape1); 
-  const long* input_coords_data = InputCoords->template Data<int32_t>();
+  const int* input_coords_data = InputCoords->template Data<int32_t>();
   const float* input_feats_data = InputFeats->template Data<float>();
-  const long* input_strides_data = InputStrides->template Data<int32_t>();
+  const int* input_strides_data = InputStrides->template Data<int32_t>();
   const float* weight_data = Weight->template Data<float>();
 
 // ----------------------------------------------------------------
@@ -109,13 +109,13 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
 
   if ( !transposed ){
     ORT_RETURN_IF_ERROR(BuildKmap(context, InputCoords, InputStrides, OutputCoords, Nbmaps_o, Nbsizes_o));
-    int* sizes_io_data = SizesIO_o -> MutableData<int32_t>();
+    int32_t* sizes_io_data = SizesIO_o -> MutableData<int32_t>();
     sizes_io_data[0] = InputCoords->Shape()[0];
     sizes_io_data[1] = OutputCoords->Shape()[0];
     std::vector<int64_t> output_feats_shape({OutputCoords->Shape()[0], InputFeats->Shape()[1]});
     OutputFeats = context->Output(1, output_feats_shape);
     ORT_RETURN_IF_ERROR(ConvolutionForward(InputFeats, OutputFeats, Weight, Nbmaps_o, Nbsizes_o));
-    long* output_strides_data = OutputStrides-> template MutableData<int32_t>();
+    int* output_strides_data = OutputStrides-> template MutableData<int32_t>();
     for (size_t i = 0; i < 3; i++){
       output_strides_data[i] = input_strides_data[i] * strides[i];
     }
@@ -126,7 +126,7 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
     ORT_RETURN_IF_ERROR(ConvolutionForward(InputFeats, OutputFeats, Weight, Nbmaps_o, Nbsizes_o));
-    long* output_strides_data = OutputStrides -> template MutableData<int32_t>();
+    int32_t* output_strides_data = OutputStrides -> template MutableData<int32_t>();
     for (size_t i = 0; i < 3; i++){
       output_strides_data[i] = input_strides_data[i] / strides[i];
     }

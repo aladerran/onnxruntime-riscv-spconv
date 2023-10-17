@@ -8,6 +8,7 @@
 #include "core/framework/op_kernel_context_internal.h"
 #include "core/common/safeint.h"
 #include "conv_pool_helper.h"
+#include <algorithm> // std::sort needs this
 
 #ifdef SYSTOLIC_FP32
 
@@ -132,6 +133,17 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
+bool cmp(std::vector<int32_t> &a, std::vector<int32_t> &b) {
+  if(a[3] != b[3]){
+    return a[3] < b[3];
+  } else if(a[0] != b[0]){
+    return a[0] < b[0];
+  } else if(a[1] != b[1]){
+    return a[1] < b[1];
+  } else {
+    return a[2] < b[2];
+  }
+}
 
 template <typename T>
 Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoords, const Tensor* InputStrides, 
@@ -169,41 +181,34 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     }
   }
 
-  const std::vector<int32_t> input_coords_tensor(InputCoords-> template Data<int32_t>()); // ?
+  const TensorShape& input_coords_shape = InputCoords -> Shape();
+  const int* input_coords_data = InputCoords-> template Data<int32_t>();
+  const std::vector<int32_t> input_coords_tensor(input_coords_data, input_coords_data + input_coords_shape.Size()); 
   std::vector<int64_t> references = hash_cpu(input_coords_tensor);
 
+  std::vector<int> output_coords_vector;
+  int64_t num_output_coords;
   if ( kernel_shape[0] > 1 || kernel_shape[1] > 1 || kernel_shape[2] > 1) {
     //downsampling
+    const int* input_strides_data = InputStrides->template Data<int32_t>();
     std::vector<int32_t> sample_stride(3); 
     for (size_t i = 0; i < 3; i++) {
       sample_stride[i] = strides[i] * input_strides_data[i];
     }
-    const TensorShape& input_coords_shape = InputCoords -> Shape();
-    std::vector<std::vector<int32_t>> output_coords_vector_uncoalesced();
-    output_coords_vector_uncoalesced.resize(input_coords_shape[0], std::vector<int32_t>(4));
+    std::vector<std::vector<int32_t>> output_coords_vector_uncoalesced(input_coords_shape[0], std::vector<int32_t>(4));
     for (size_t i = 0; i < input_coords_shape[0]; i++) {
-      output_coords_vector_uncoalesced[ i * 4 ] = input_coords_data[ i * 4 ] / sample_stride[0] * sample_stride[0];
-      output_coords_vector_uncoalesced[ i * 4 + 1 ] = input_coords_data[ i * 4 + 1 ] / sample_stride[1] * sample_stride[1];
-      output_coords_vector_uncoalesced[ i * 4 + 2 ] = input_coords_data[ i * 4 + 2 ] / sample_stride[2] * sample_stride[2];
-      output_coords_vector_uncoalesced[ i * 4 + 3 ] = input_coords_data[ i * 4 + 3 ];
+      output_coords_vector_uncoalesced[ i * 4 ][0] = input_coords_data[ i * 4 ] / sample_stride[0] * sample_stride[0];
+      output_coords_vector_uncoalesced[ i * 4 ][1] = input_coords_data[ i * 4 + 1 ] / sample_stride[1] * sample_stride[1];
+      output_coords_vector_uncoalesced[ i * 4 ][2] = input_coords_data[ i * 4 + 2 ] / sample_stride[2] * sample_stride[2];
+      output_coords_vector_uncoalesced[ i * 4 ][3] = input_coords_data[ i * 4 + 3 ];
     }
-    bool cmp(std::vector<int32_t> &a, std::vector<int32_t> &b){
-      if(a[3] != b[3]){
-        return a[3] < b[3];
-      } else if(a[0] != b[0]){
-        return a[0] < b[0];
-      } else if(a[1] != b[1]){
-        return a[1] < b[1];
-      } else if(a[2] != b[2]){
-        return a[2] < b[2];
-      }
-    }
+
     std::sort(output_coords_vector_uncoalesced.begin(), output_coords_vector_uncoalesced.end(), cmp);
     auto pos = std::unique(output_coords_vector_uncoalesced.begin(), output_coords_vector_uncoalesced.end());
     output_coords_vector_uncoalesced.erase(pos, output_coords_vector_uncoalesced.end());
 
-    size_t num_output_coords = output_coords_vector_uncoalesced.size();
-    std::vector<int32_t> output_coords_shape({num_output_coords, 4});
+    num_output_coords = output_coords_vector_uncoalesced.size();
+    std::vector<int64_t> output_coords_shape({num_output_coords, 4});
     OutputCoords = context->Output(0, output_coords_shape);
     int32_t* output_coords_data = OutputCoords -> template MutableData<int32_t>();
     for (size_t i = 0; i < num_output_coords; ++i){
@@ -212,21 +217,27 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       output_coords_data[i * 4 + 2] = output_coords_vector_uncoalesced[i][2];
       output_coords_data[i * 4 + 3] = output_coords_vector_uncoalesced[i][3];
     }
-    const std::vector<int32_t> output_coords_vector(output_coords_data, num_output_coords * 4);
+    std::vector<int> output_coords_vector_t(output_coords_data, output_coords_data + num_output_coords * 4);
+    output_coords_vector = std::move(output_coords_vector_t);
   } else {
     // use input coordinates as output coordinates
     OutputCoords = context->Output(0, InputCoords->Shape());
+    num_output_coords = InputCoords->Shape()[0];
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(InputCoords, OutputCoords));
-    const int32_t* output_coords_data = OutputCoords -> template Data<int32_t>();
-    const std::vector<int32_t> output_coords_vector(output_coords_data, num_output_coords * 4);
+    const int* output_coords_data = OutputCoords -> template Data<int32_t>();
+    std::vector<int> output_coords_vector_t(output_coords_data, output_coords_data + num_output_coords * 4);
+    output_coords_vector = std::move(output_coords_vector_t);
   }
+
   std::vector<int64_t> queries = kernel_hash_cpu(output_coords_vector, offsets);
-  std::vector<int64_t> results =  hash_query_cpu(queries, references);
+  std::vector<int64_t> indices(num_output_coords);
+  std::iota(indices.begin(), indices.end(), 0);
+  std::vector<int64_t> results =  hash_query_cpu(queries, references, indices);
   //parse nbsizes
-  size_t kernel_volume = kernel_shape[0] * kernel_shape[1] * kernel_shape[2];
+  int64_t kernel_volume = kernel_shape[0] * kernel_shape[1] * kernel_shape[2];
   std::vector<int64_t> nbsizes_shape({kernel_volume});
   Nbsizes = context->Output(4, nbsizes_shape);
-  int32_t* nbsizes_data = Nbsizes->template MutableData<int32_t>();
+  int* nbsizes_data = Nbsizes->template MutableData<int32_t>();
   for (size_t i = 0; i < kernel_volume; i++){
     size_t sum = 0;
     for(size_t j = 0; j < num_output_coords; j++){
@@ -237,13 +248,13 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     nbsizes_data[i] = sum;
   }
   //parse nbmaps
-  size_t sum_nbmaps = 0;
+  int64_t sum_nbmaps = 0;
   for(size_t i = 0; i < kernel_volume; i++){
     sum_nbmaps += nbsizes_data[i];
   }
   std::vector<int64_t> nbmaps_shape({sum_nbmaps,2});
   Nbmaps = context->Output(3, nbsizes_shape);
-  int32_t* nbmaps_data = Nbmaps->template MutableData<int32_t>();
+  int* nbmaps_data = Nbmaps->template MutableData<int32_t>();
   size_t count = 0;
   for (size_t i = 0; i < kernel_volume; i++){
     for(size_t j = 0; j < num_output_coords; j++){
@@ -264,12 +275,12 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* OutputF
   const float* input_feats_data = InputFeats->template Data<float>();
   float* output_feats_data = OutputFeats->template MutableData<float>();
   const float* weight_data = Weight->template Data<float>();
-  const int32_t* nbmaps_data = Nbmaps->template Data<int32_t>();
-  const int32_t* nbsizes_data = Nbsizes->template Data<int32_t>();
+  const int* nbmaps_data = Nbmaps->template Data<int32_t>();
+  const int* nbsizes_data = Nbsizes->template Data<int32_t>();
   size_t kernel_volume = conv_attrs_.kernel_shape_[0] * conv_attrs_.kernel_shape_[1] * conv_attrs_.kernel_shape_[2];
-  convolution_forward_cpu(input_feats_data, output_feats_data, weight_data, nbmaps_data, nbsizes_data, 
-                          const(conv_attrs_.transposed == 1), static_cast<int>(InputFeats->Shape()[0]), 
-                          static_cast<int>(OutputFeats->Shape()[0]), static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());                           
+  convolution_forward_cpu(input_feats_data, output_feats_data, weight_data, nbmaps_data, nbsizes_data, conv_attrs_.transposed == 1, 
+                          static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), static_cast<const int>(4), 
+                          static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());                   
   return Status::OK();
 }
 

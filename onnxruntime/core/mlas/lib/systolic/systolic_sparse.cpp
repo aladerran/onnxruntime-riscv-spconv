@@ -73,9 +73,9 @@ void gather_cpu(const int n_k, const int n_in, const int c,
 }
 
 
-void convolution_forward_cpu(float *in_feat, float *out_feat,
-                             float *kernel, int *neighbor_map,
-                             int *neighbor_offset, const bool transpose,
+void convolution_forward_cpu(const float *in_feat, float *out_feat,
+                             const float *kernel, const int *neighbor_map,
+                             const int *neighbor_offset, const bool transpose,
                              const int in_nrows, const int out_nrows,
                              const int kernel_volume, const int c, 
                              enum tiled_matmul_type_t tiled_matmul_type) {

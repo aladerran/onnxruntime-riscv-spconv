@@ -118,9 +118,9 @@ void SystolicConvBackpropFilter(char accelerator_mode, int batch_size, int in_di
 // Add sparse conv backend
 
 void convolution_forward_cpu
-MLASCALL(float *in_feat, float *out_feat,
-                float *kernel, int *neighbor_map,
-                int *neighbor_offset, const bool transpose,
+MLASCALL(const float *in_feat, float *out_feat,
+                const float *kernel, const int *neighbor_map,
+                const int *neighbor_offset, const bool transpose,
                 const int in_nrows, const int out_nrows,
                 const int kernel_volume, const int c, 
                 char accelerator_mode);

@@ -14,6 +14,20 @@
 #include "systolic_include.h"
 
 
+#define ROTATED_MATMUL_TYPE(x)
+
+/**
+ * Interally CPU is last in tiled_matmul_type_t but we want to expose CPU as accelerator mode 0
+ * So just rotate everything by one
+ */
+inline int positive_mod(int i, int n) {
+  return (i % n + n) % n;
+}
+inline tiled_matmul_type_t get_accelerator_mode(int mode) {
+  return static_cast<tiled_matmul_type_t>(positive_mod(mode - 1, (int)CPU + 1));
+}
+
+
 // Naive matmul
 void slow_matmul(const float *A, const float *B, float *C, int M, int N, int K) {
     for(int i = 0; i < M; ++i) {
@@ -74,11 +88,13 @@ void gather_cpu(const int n_k, const int n_in, const int c,
 
 
 void convolution_forward_cpu(const float *in_feat, float *out_feat,
-                             const float *kernel, const int *neighbor_map,
-                             const int *neighbor_offset, const bool transpose,
-                             const int in_nrows, const int out_nrows,
-                             const int kernel_volume, const int c, 
-                             enum tiled_matmul_type_t tiled_matmul_type) {
+                                const float *kernel, const int *neighbor_map,
+                                const int *neighbor_offset, const bool transpose,
+                                const int in_nrows, const int out_nrows,
+                                const int kernel_volume, const int c, 
+                                char accelerator_mode){
+
+    tiled_matmul_type_t tiled_matmul_type = get_accelerator_mode(accelerator_mode);
 
     // Initialize output feature with zeros
     std::fill(out_feat, out_feat + out_nrows * c, 0.0f);

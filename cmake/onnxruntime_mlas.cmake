@@ -179,7 +179,7 @@ else()
     if (onnxruntime_USE_SYSTOLIC)
       set(mlas_platform_srcs ${mlas_platform_srcs}
         ${ONNXRUNTIME_ROOT}/core/mlas/lib/systolic/systolic.cpp
-        ${ONNXRUNTIME_ROOT}/core/mlas/lib/systolic/systolic_sparse.cpp
+        # ${ONNXRUNTIME_ROOT}/core/mlas/lib/systolic/systolic_sparse.cpp
       )
     endif()
     if (onnxruntime_USE_HWACHA)

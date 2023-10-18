@@ -485,7 +485,7 @@ void convolution_forward_cpu(const float *in_feat, float *out_feat,
 }
 
 
-void cpu_hash_wrapper(int N, const int* data, int64_t* out) {
+void cpu_hash_wrapper(int N, const int *data, int64_t *out) {
     for (int i = 0; i < N; i++) {
         uint64_t hash = 14695981039346656037UL;
         for (int j = 0; j < 4; j++) {
@@ -497,9 +497,8 @@ void cpu_hash_wrapper(int N, const int* data, int64_t* out) {
     }
 }
 
-
-void cpu_kernel_hash_wrapper(size_t N, int K, const int* data,
-                             const int* kernel_offset, int64_t* out) {
+void cpu_kernel_hash_wrapper(int N, int K, const int *data,
+                             const int *kernel_offset, int64_t *out) {
     for (int k = 0; k < K; k++) {
         for (int i = 0; i < N; i++) {
             int cur_coord[4];
@@ -518,31 +517,24 @@ void cpu_kernel_hash_wrapper(size_t N, int K, const int* data,
     }
 }
 
-
-std::vector<int64_t> hash_cpu(const std::vector<int>& idx) {
-    size_t N = idx.size();
-    std::vector<int64_t> out(N);
+std::vector<int64_t> hash_cpu(const std::vector<int> &idx, int N) {
+    std::vector<int64_t> out(N, 0);
     cpu_hash_wrapper(N, idx.data(), out.data());
     return out;
 }
 
-
-std::vector<int64_t> kernel_hash_cpu(const std::vector<int>& idx,
-                                     const std::vector<int>& kernel_offset) {
-    int N = idx.size();
-    int K = kernel_offset.size() / 3;
-    std::vector<int64_t> out(K * N);
+std::vector<int64_t> kernel_hash_cpu(const std::vector<int> &idx,
+                                     const std::vector<int> &kernel_offset, 
+                                     int N, int K) {
+    std::vector<int64_t> out(K * N, 0);
     cpu_kernel_hash_wrapper(N, K, idx.data(), kernel_offset.data(), out.data());
     return out;
 }
 
-
 std::vector<int64_t> hash_query_cpu(const std::vector<int64_t>& hash_query,
                                     const std::vector<int64_t>& hash_target,
-                                    const std::vector<int64_t>& idx_target) {
-    int n = hash_target.size();
-    int n1 = hash_query.size();
-
+                                    const std::vector<int64_t>& idx_target, int n, int n1) {
+                                        
     google::dense_hash_map<int64_t, int64_t> hashmap;
     hashmap.set_empty_key(0);
     std::vector<int64_t> out(n1, 0);
@@ -552,9 +544,10 @@ std::vector<int64_t> hash_query_cpu(const std::vector<int64_t>& hash_query,
         int64_t val = idx_target[idx] + 1;
         hashmap.insert(std::make_pair(key, val));
     }
+
     for (int idx = 0; idx < n1; idx++) {
         int64_t key = hash_query[idx];
-        auto iter = hashmap.find(key);
+        google::dense_hash_map<int64_t, int64_t>::iterator iter = hashmap.find(key);
         if (iter != hashmap.end()) {
             out[idx] = iter->second;
         }
@@ -562,5 +555,6 @@ std::vector<int64_t> hash_query_cpu(const std::vector<int64_t>& hash_query,
 
     return out;
 }
+
 
 #pragma GCC diagnostic pop

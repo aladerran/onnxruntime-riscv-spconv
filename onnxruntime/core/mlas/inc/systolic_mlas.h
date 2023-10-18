@@ -126,14 +126,14 @@ MLASCALL(const float *in_feat, float *out_feat,
                 char accelerator_mode);
 
 std::vector<int64_t> hash_cpu
-MLASCALL(const std::vector<int>& idx);
+MLASCALL(const std::vector<int>& idx, int N);
+
+std::vector<int64_t> kernel_hash_cpu
+MLASCALL(const std::vector<int>& idx, const std::vector<int>& kernel_offset, int N, int K);
 
 std::vector<int64_t> hash_query_cpu
 MLASCALL(const std::vector<int64_t>& hash_query,
                 const std::vector<int64_t>& hash_target,
-                const std::vector<int64_t>& idx_target);
-
-std::vector<int64_t> kernel_hash_cpu
-MLASCALL(const std::vector<int>& idx, const std::vector<int>& kernel_offset);
+                const std::vector<int64_t>& idx_target, int n, int n1);
                             
 #endif

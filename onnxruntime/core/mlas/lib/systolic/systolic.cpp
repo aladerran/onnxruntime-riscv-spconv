@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <vector>
 #include <google/dense_hash_map>
+#include <iostream>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -377,16 +378,15 @@ void cleargemmini() {
 
 // systolic sparse backend
 
-
 // Naive matmul
 void slow_matmul(const float *A, const float *B, float *C, int M, int N, int K) {
     for(int i = 0; i < M; ++i) {
-        for(int j = 0; j < K; ++j) {
+        for(int j = 0; j < N; ++j) {
             float sum = 0.0;
-            for(int k = 0; k < N; ++k) {
-                sum += A[i * N + k] * B[k * K + j];
+            for(int k = 0; k < K; ++k) {
+                sum += A[i * K + k] * B[k * N + j];
             }
-            C[i * K + j] = sum;
+            C[i * N + j] = sum;
         }
     }
 }
@@ -406,6 +406,27 @@ void gemmini_matmul(const float *A, const float *B, float *C, int M, int N, int 
                     0,
                     tiled_matmul_type);
 }
+
+void matmul_type_dispatch(tiled_matmul_type_t tiled_matmul_type, 
+                          const float* A, const float* B, float* C, 
+                          int M, int N, int K) {
+    switch (tiled_matmul_type) {
+        case CPU:
+            slow_matmul(A, B, C, M, N, K);
+            break;
+        case OS:
+            std::cout << "Using Gemmini OS Matmul！" << std::endl;
+            gemmini_matmul(A, B, C, M, N, K, OS);
+            break;
+        case WS:
+            std::cout << "Using Gemmini WS Matmul!" << std::endl;
+            gemmini_matmul(A, B, C, M, N, K, WS);
+            break;
+        default:
+            throw std::invalid_argument("Invalid matmul type");
+    }
+}
+
 
 
 void scatter_cpu(const int n_in, const int n_out, const int c,
@@ -437,49 +458,77 @@ void gather_cpu(const int n_k, const int n_in, const int c,
 }
 
 
-void convolution_forward_cpu(const float *in_feat, float *out_feat,
-                                const float *kernel, const int *neighbor_map,
-                                const int *neighbor_offset, const bool transpose,
-                                const int in_nrows, const int out_nrows,
-                                const int kernel_volume, const int c, 
-                                char accelerator_mode){
+void convolution_forward_cpu(const std::vector<float>& in_feat,
+                             std::vector<float>& out_feat,
+                             const std::vector<float>& kernel,
+                             const std::vector<int>& neighbor_map,
+                             const std::vector<int>& neighbor_offset,
+                             const bool transpose,
+                             const int in_channels,
+                             const int out_channels,
+                             const int in_nrows,
+                             const int out_nrows,
+                             const int kernel_volume,
+                             char accelerator_mode){
 
     tiled_matmul_type_t tiled_matmul_type = get_accelerator_mode(accelerator_mode);
 
-    // Initialize output feature with zeros
-    std::fill(out_feat, out_feat + out_nrows * c, 0.0f);
+    // Resize the out_feat vector and fill it with zeros
+    out_feat.resize(out_nrows * out_channels);
+    std::fill(out_feat.begin(), out_feat.end(), 0.0f);
 
-    int in_buffer_size =
-        *std::max_element(neighbor_offset, neighbor_offset + kernel_volume);
+    int in_buffer_size = 1;
+    bool flag = false;
+    // memory optimization
+    // if (kernel_volume % 2 && out_nrows == in_nrows) {
+    //     flag = true;
+    //     in_buffer_size =
+    //         *std::max_element(neighbor_offset.begin(),
+    //                           neighbor_offset.begin() + kernel_volume / 2);
+    //     in_buffer_size =
+    //         std::max(in_buffer_size,
+    //                  *std::max_element(
+    //                      neighbor_offset.begin() + kernel_volume / 2 + 1,
+    //                      neighbor_offset.begin() + kernel_volume));
+    //     in_buffer_size = std::max(in_buffer_size, 1);
 
-    std::vector<float> in_buffer(in_buffer_size * c, 0.0f);
-    std::vector<float> out_buffer(in_buffer_size * c, 0.0f);
+    //     // Perform matmul for the center kernel if conditions are met
+    //     matmul_type_dispatch(tiled_matmul_type, &in_feat[0], 
+    //                          &kernel[kernel_volume / 2 * in_channels * out_channels],
+    //                          &out_feat[0], out_nrows, in_channels, out_channels);
+    // } else {
+        in_buffer_size =
+            *std::max_element(neighbor_offset.begin(), neighbor_offset.begin() + kernel_volume);
+    // }
+
+    std::vector<float> in_buffer(in_buffer_size * in_channels, 0.0f);
+    std::vector<float> out_buffer(in_buffer_size * out_channels, 0.0f);
+
     int cur_offset = 0;
     for (int i = 0; i < kernel_volume; i++) {
+        if (flag && (i == kernel_volume / 2)) {
+            cur_offset += 2 * neighbor_offset[i];
+            continue;
+        }
 
         if (neighbor_offset[i] == 0) {
             continue;
         }
 
-        float *out_buffer_activated = &out_buffer[0];
-        float *in_buffer_activated = &in_buffer[0];
-
         // gather
-        gather_cpu(neighbor_offset[i], in_nrows, c,
-                   in_feat, in_buffer_activated,
-                   neighbor_map + cur_offset, transpose);
+        gather_cpu(neighbor_offset[i], in_nrows, in_channels,
+                   &in_feat[0], &in_buffer[0],
+                   &neighbor_map[cur_offset], transpose);
 
         // matmul
-        if (tiled_matmul_type == CPU){
-            slow_matmul(in_buffer_activated, kernel + i * c * c, out_buffer_activated, neighbor_offset[i], c, c);
-        }
-        else{
-            gemmini_matmul(in_buffer_activated, kernel + i * c * c, out_buffer_activated, neighbor_offset[i], c, c, tiled_matmul_type);
-        }
+        matmul_type_dispatch(tiled_matmul_type, &in_buffer[0], 
+                             &kernel[i * in_channels * out_channels],
+                             &out_buffer[0], neighbor_offset[i], in_channels, out_channels);
+
         // scatter
-        scatter_cpu(neighbor_offset[i], out_nrows, c,
-                    out_buffer_activated, out_feat,
-                    neighbor_map + cur_offset, transpose);
+        scatter_cpu(neighbor_offset[i], out_nrows, out_channels,
+                    &out_buffer[0], &out_feat[0],
+                    &neighbor_map[cur_offset], transpose);
         cur_offset += 2 * neighbor_offset[i];
     }
 }

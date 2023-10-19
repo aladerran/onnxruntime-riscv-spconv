@@ -126,11 +126,11 @@ MLASCALL(const float* in_feat, float* out_feat,
           const int kernel_volume, char accelerator_mode);
 
 void hash_cpu
-MLASCALL(const int *idx, int64_t *out, const int N)；
+MLASCALL(const int *idx, int64_t *out, const int N);
 
 void kernel_hash_cpu
 MLASCALL(const int *idx, const int *kernel_offset,
-          int64_t *out, const int N, const int K)；
+          int64_t *out, const int N, const int K);
 
 void hash_query_cpu
 MLASCALL(const int64_t* hash_query, const int64_t* hash_target,

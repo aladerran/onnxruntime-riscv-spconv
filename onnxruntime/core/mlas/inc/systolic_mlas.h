@@ -118,28 +118,22 @@ void SystolicConvBackpropFilter(char accelerator_mode, int batch_size, int in_di
 // Add sparse conv backend
 
 void convolution_forward_cpu
-MLASCALL(const std::vector<float>& in_feat,
-                std::vector<float>& out_feat,
-                const std::vector<float>& kernel,
-                const std::vector<int>& neighbor_map,
-                const std::vector<int>& neighbor_offset,
-                const bool transpose,
-                const int in_channels,
-                const int out_channels,
-                const int in_nrows,
-                const int out_nrows,
-                const int kernel_volume,
-                char accelerator_mode);
+MLASCALL(const float* in_feat, float* out_feat,
+          const float* kernel, const int* neighbor_map,
+          const int* neighbor_offset, const bool transpose,
+          const int in_channels, const int out_channels,
+          const int in_nrows, const int out_nrows,
+          const int kernel_volume, char accelerator_mode);
 
-std::vector<int64_t> hash_cpu
-MLASCALL(const std::vector<int>& idx, int N);
+void hash_cpu
+MLASCALL(const int *idx, int64_t *out, const int N)；
 
-std::vector<int64_t> kernel_hash_cpu
-MLASCALL(const std::vector<int>& idx, const std::vector<int>& kernel_offset, int N, int K);
+void kernel_hash_cpu
+MLASCALL(const int *idx, const int *kernel_offset,
+          int64_t *out, const int N, const int K)；
 
-std::vector<int64_t> hash_query_cpu
-MLASCALL(const std::vector<int64_t>& hash_query,
-                const std::vector<int64_t>& hash_target,
-                const std::vector<int64_t>& idx_target, int n, int n1);
+void hash_query_cpu
+MLASCALL(const int64_t* hash_query, const int64_t* hash_target,
+          const int64_t* idx_target, int64_t* out, const int n, const int n1);
                             
 #endif

@@ -458,53 +458,58 @@ void gather_cpu(const int n_k, const int n_in, const int c,
 }
 
 
-void convolution_forward_cpu(const std::vector<float>& in_feat,
-                             std::vector<float>& out_feat,
-                             const std::vector<float>& kernel,
-                             const std::vector<int>& neighbor_map,
-                             const std::vector<int>& neighbor_offset,
+void convolution_forward_cpu(const float* in_feat,
+                             float* out_feat,
+                             const float* kernel,
+                             const int* neighbor_map,
+                             const int* neighbor_offset,
                              const bool transpose,
                              const int in_channels,
                              const int out_channels,
                              const int in_nrows,
                              const int out_nrows,
                              const int kernel_volume,
-                             char accelerator_mode){
+                             char accelerator_mode) {
 
     tiled_matmul_type_t tiled_matmul_type = get_accelerator_mode(accelerator_mode);
 
-    // Resize the out_feat vector and fill it with zeros
-    out_feat.resize(out_nrows * out_channels);
-    std::fill(out_feat.begin(), out_feat.end(), 0.0f);
+    // Initialize output features to zero
+    std::fill(out_feat, out_feat + out_nrows * out_channels, 0);
 
     int in_buffer_size = 1;
     bool flag = false;
-    // memory optimization
-    // if (kernel_volume % 2 && out_nrows == in_nrows) {
-    //     flag = true;
-    //     in_buffer_size =
-    //         *std::max_element(neighbor_offset.begin(),
-    //                           neighbor_offset.begin() + kernel_volume / 2);
-    //     in_buffer_size =
-    //         std::max(in_buffer_size,
-    //                  *std::max_element(
-    //                      neighbor_offset.begin() + kernel_volume / 2 + 1,
-    //                      neighbor_offset.begin() + kernel_volume));
-    //     in_buffer_size = std::max(in_buffer_size, 1);
 
-    //     // Perform matmul for the center kernel if conditions are met
-    //     matmul_type_dispatch(tiled_matmul_type, &in_feat[0], 
-    //                          &kernel[kernel_volume / 2 * in_channels * out_channels],
-    //                          &out_feat[0], out_nrows, in_channels, out_channels);
-    // } else {
+    // Determine buffer size for memory optimization
+    if (kernel_volume % 2 && out_nrows == in_nrows) {
+        flag = true;
         in_buffer_size =
-            *std::max_element(neighbor_offset.begin(), neighbor_offset.begin() + kernel_volume);
-    // }
+            *std::max_element(neighbor_offset,
+                              neighbor_offset + kernel_volume / 2);
+        in_buffer_size =
+            std::max(in_buffer_size,
+                     *std::max_element(
+                         neighbor_offset + kernel_volume / 2 + 1,
+                         neighbor_offset + kernel_volume));
+        in_buffer_size = std::max(in_buffer_size, 1);
 
-    std::vector<float> in_buffer(in_buffer_size * in_channels, 0.0f);
-    std::vector<float> out_buffer(in_buffer_size * out_channels, 0.0f);
+        // Perform initial matrix multiplication
+        matmul_type_dispatch(tiled_matmul_type,
+                             in_feat,
+                             kernel + (kernel_volume / 2) * in_channels * out_channels,
+                             out_feat,
+                             in_nrows,
+                             out_channels,
+                             in_channels);
+    } else {
+        in_buffer_size =
+            *std::max_element(neighbor_offset,
+                              neighbor_offset + kernel_volume);
+    }
 
+    std::vector<float> in_buffer(in_buffer_size * in_channels, 0);
+    std::vector<float> out_buffer(in_buffer_size * out_channels, 0);
     int cur_offset = 0;
+
     for (int i = 0; i < kernel_volume; i++) {
         if (flag && (i == kernel_volume / 2)) {
             cur_offset += 2 * neighbor_offset[i];
@@ -515,26 +520,31 @@ void convolution_forward_cpu(const std::vector<float>& in_feat,
             continue;
         }
 
-        // gather
+        // Gather
         gather_cpu(neighbor_offset[i], in_nrows, in_channels,
-                   &in_feat[0], &in_buffer[0],
-                   &neighbor_map[cur_offset], transpose);
+                   in_feat, in_buffer.data(),
+                   neighbor_map + cur_offset, transpose);
 
-        // matmul
-        matmul_type_dispatch(tiled_matmul_type, &in_buffer[0], 
-                             &kernel[i * in_channels * out_channels],
-                             &out_buffer[0], neighbor_offset[i], in_channels, out_channels);
+        // Matrix multiplication
+        matmul_type_dispatch(tiled_matmul_type,
+                             in_buffer.data(),
+                             kernel + i * in_channels * out_channels,
+                             out_buffer.data(),
+                             neighbor_offset[i],
+                             out_channels,
+                             in_channels);
 
-        // scatter
+        // Scatter
         scatter_cpu(neighbor_offset[i], out_nrows, out_channels,
-                    &out_buffer[0], &out_feat[0],
-                    &neighbor_map[cur_offset], transpose);
+                    out_buffer.data(),
+                    out_feat,
+                    neighbor_map + cur_offset, transpose);
         cur_offset += 2 * neighbor_offset[i];
     }
 }
 
 
-void cpu_hash_wrapper(int N, const int *data, int64_t *out) {
+void cpu_hash_wrapper(const int N, const int *data, int64_t *out) {
     for (int i = 0; i < N; i++) {
         uint64_t hash = 14695981039346656037UL;
         for (int j = 0; j < 4; j++) {
@@ -546,7 +556,7 @@ void cpu_hash_wrapper(int N, const int *data, int64_t *out) {
     }
 }
 
-void cpu_kernel_hash_wrapper(int N, int K, const int *data,
+void cpu_kernel_hash_wrapper(const int N, const int K, const int *data,
                              const int *kernel_offset, int64_t *out) {
     for (int k = 0; k < K; k++) {
         for (int i = 0; i < N; i++) {
@@ -566,27 +576,19 @@ void cpu_kernel_hash_wrapper(int N, int K, const int *data,
     }
 }
 
-std::vector<int64_t> hash_cpu(const std::vector<int> &idx, int N) {
-    std::vector<int64_t> out(N, 0);
-    cpu_hash_wrapper(N, idx.data(), out.data());
-    return out;
+void hash_cpu(const int *idx, int64_t *out, const int N) {
+    cpu_hash_wrapper(N, idx, out);
 }
 
-std::vector<int64_t> kernel_hash_cpu(const std::vector<int> &idx,
-                                     const std::vector<int> &kernel_offset, 
-                                     int N, int K) {
-    std::vector<int64_t> out(K * N, 0);
-    cpu_kernel_hash_wrapper(N, K, idx.data(), kernel_offset.data(), out.data());
-    return out;
+void kernel_hash_cpu(const int *idx, const int *kernel_offset,
+                     int64_t *out, const int N, const int K) {
+    cpu_kernel_hash_wrapper(N, K, idx, kernel_offset, out);
 }
 
-std::vector<int64_t> hash_query_cpu(const std::vector<int64_t>& hash_query,
-                                    const std::vector<int64_t>& hash_target,
-                                    const std::vector<int64_t>& idx_target, int n, int n1) {
-                                        
+void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
+                    const int64_t* idx_target, int64_t* out, const int n, const int n1) {
     google::dense_hash_map<int64_t, int64_t> hashmap;
     hashmap.set_empty_key(0);
-    std::vector<int64_t> out(n1, 0);
     
     for (int idx = 0; idx < n; idx++) {
         int64_t key = hash_target[idx];
@@ -601,9 +603,6 @@ std::vector<int64_t> hash_query_cpu(const std::vector<int64_t>& hash_query,
             out[idx] = iter->second;
         }
     }
-
-    return out;
 }
-
 
 #pragma GCC diagnostic pop

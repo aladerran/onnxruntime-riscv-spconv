@@ -45,6 +45,14 @@ unsigned long long read_cycles() {
 }
 
 
+void print_tensor_dim1(const char* name, int32_t* data, const int64_t* shape) {
+  size_t size_0 = shape[0];
+  std::cout << name << " [" << std::endl;
+  for (size_t i = 0; i < size_0; i++) {
+    std::cout << data[i] << " ";
+  }
+  std::cout << "]" << std::endl;
+}
 void print_tensor_dim2(const char* name, int32_t* data, const int64_t* shape) {
   size_t size_0 = shape[0];
   size_t size_1 = shape[1];
@@ -230,11 +238,11 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   std::cout << "output_feats:" << std::endl;
   print_tensor_dim2(output_node_names[1], feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data());
   std::cout << "output_strides:" << std::endl;
-  print_tensor_dim2(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
+  print_tensor_dim1(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
   std::cout << "output_nbmaps:" << std::endl;
   print_tensor_dim2(output_node_names[3], nbmaps_arr, output_tensors[3].GetTensorTypeAndShapeInfo().GetShape().data());
   std::cout << "output_nbsizes:" << std::endl;
-  print_tensor_dim2(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
+  print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
 
 
   return;

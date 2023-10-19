@@ -63,8 +63,8 @@ struct SpConvAttributes {
         return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "InputCoords expects a N x 4 Tensor which has 2 dims, ",
                              " got InputCoords shape: ", coords_shape.ToString().c_str());
     }
-    if (feats_shape.NumDimensions() !=2 || feats_shape[1] != 4 ){
-        return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "InputFeats expects a N x 4 Tensor which has 2 dims, ",
+    if (feats_shape.NumDimensions() !=2 ){
+        return ORT_MAKE_STATUS(ONNXRUNTIME, FAIL, "InputFeats expects a N x M Tensor which has 2 dims, ",
                              " got InputFeats shape: ", feats_shape.ToString().c_str());
     }
     if (strides_shape.NumDimensions() !=1 || strides_shape[0] != 3 ){

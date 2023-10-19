@@ -29,11 +29,12 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   const Tensor* InputFeats = context->Input<Tensor>(1);
   const Tensor* InputStrides = context->Input<Tensor>(2);
   const Tensor* Weight = context->Input<Tensor>(3);
-  const Tensor* Bias = context->Input<Tensor>(4);             // optional. nullptr if not provided
-  const Tensor* OutputCoords_i = context->Input<Tensor>(5);   // optional. nullptr if not provided
-  const Tensor* Nbmaps_i = context->Input<Tensor>(6);         // optional. nullptr if not provided
-  const Tensor* Nbsizes_i = context->Input<Tensor>(7);        // optional. nullptr if not provided
-  const Tensor* SizesIO_i = context->Input<Tensor>(8);        // optional. nullptr if not provided
+  const Tensor* Nbmaps_i = context->Input<Tensor>(4);         // optional. nullptr if not provided
+  const Tensor* Nbsizes_i = context->Input<Tensor>(5);        // optional. nullptr if not provided
+  const Tensor* SizesIO_i = context->Input<Tensor>(6);        // optional. nullptr if not provided
+  const Tensor* OutputCoords_i = context->Input<Tensor>(7);   // optional. nullptr if not provided
+  const Tensor* Bias = context->Input<Tensor>(8);             // optional. nullptr if not provided
+
     // OutputCoords_i, Nbmaps_i, Nbsizes_i, SizesIO_i should be provided togather, or none of them is provided
 
   std::cout << "debug-zxr: start spconv3d computing" << std::endl;
@@ -74,36 +75,36 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   const float* weight_data = Weight->template Data<float>();
 
 // ----------------------------------------------------------------
-  std::cout << "print input data" << std::endl;
-  std::cout << "input_coords_data:" << std::endl;
-  for (size_t i = 0; i < InputCoords->Shape()[0]; i++){
-    for (size_t j = 0; j < InputCoords->Shape()[1]; j++){
-      std::cout << input_coords_data[i * InputCoords->Shape()[1] + j] << " ";
-    }
-    std::cout << std::endl;
-  }
-  std::cout << "input_feats_data:" << std::endl;
-  for (size_t i = 0; i < InputFeats->Shape()[0]; i++){
-    for (size_t j = 0; j < InputFeats->Shape()[1]; j++){
-      std::cout << input_feats_data[i * InputFeats->Shape()[1] + j] << " ";
-    }
-    std::cout << std::endl;
-  }
-  std::cout << "input_strides_data:" << std::endl;
-  for (size_t i = 0; i < InputStrides->Shape()[0]; i++){
-    std::cout << input_strides_data[i] << " ";
-  }
-  std::cout << std::endl;
-  std::cout << "weight_data:" << std::endl;
-  for (size_t i = 0; i < Weight->Shape()[0]; i++){
-    for (size_t j = 0; j < Weight->Shape()[1]; j++){
-      for (size_t k = 0; k < Weight->Shape()[2]; k++){
-        std::cout << weight_data[ (i * Weight->Shape()[1] + j) * Weight->Shape()[2] + k] << " ";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << std::endl;
-  }
+  // std::cout << "print input data" << std::endl;
+  // std::cout << "input_coords_data:" << std::endl;
+  // for (size_t i = 0; i < InputCoords->Shape()[0]; i++){
+  //   for (size_t j = 0; j < InputCoords->Shape()[1]; j++){
+  //     std::cout << input_coords_data[i * InputCoords->Shape()[1] + j] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
+  // std::cout << "input_feats_data:" << std::endl;
+  // for (size_t i = 0; i < InputFeats->Shape()[0]; i++){
+  //   for (size_t j = 0; j < InputFeats->Shape()[1]; j++){
+  //     std::cout << input_feats_data[i * InputFeats->Shape()[1] + j] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
+  // std::cout << "input_strides_data:" << std::endl;
+  // for (size_t i = 0; i < InputStrides->Shape()[0]; i++){
+  //   std::cout << input_strides_data[i] << " ";
+  // }
+  // std::cout << std::endl;
+  // std::cout << "weight_data:" << std::endl;
+  // for (size_t i = 0; i < Weight->Shape()[0]; i++){
+  //   for (size_t j = 0; j < Weight->Shape()[1]; j++){
+  //     for (size_t k = 0; k < Weight->Shape()[2]; k++){
+  //       std::cout << weight_data[ (i * Weight->Shape()[1] + j) * Weight->Shape()[2] + k] << " ";
+  //     }
+  //     std::cout << std::endl;
+  //   }
+  //   std::cout << std::endl;
+  // }
 //----------------------------------------------------------------
 
   if ( !transposed ){
@@ -127,8 +128,10 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     for (size_t i = 0; i < 3; i++){
       output_strides_data[i] = input_strides_data[i] * strides[i];
     }
-
   }else {
+    OutputCoords = context->Output(0, OutputCoords_i->Shape());
+    Nbmaps_o = context->Output(3, Nbmaps_i->Shape());
+    Nbsizes_o = context->Output(4, Nbsizes_i->Shape());
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(OutputCoords_i, OutputCoords));
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbmaps_i, Nbmaps_o));
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
@@ -140,42 +143,41 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     for (size_t i = 0; i < 3; i++){
       output_strides_data[i] = input_strides_data[i] / strides[i];
     }
-    std::cout << "transposed case not yet implemented" << std::endl;
   }
 
-  int* output_coords_data = OutputCoords -> template MutableData<int32_t>();
-  const float* output_feats_data = OutputFeats->template Data<float>();
-  const int* output_strides_data = OutputStrides->template Data<int32_t>();
-  std::cout << "print outputs:" << std::endl;
-  std::cout << "output_coords_data:" << std::endl;
-  for (size_t i = 0; i < OutputCoords->Shape()[0]; i++){
-    for (size_t j = 0; j < OutputCoords->Shape()[1]; j++){
-      std::cout << output_coords_data[i * OutputCoords->Shape()[1] + j] << " ";
-    }
-    std::cout << std::endl;
-  }
-  std::cout << "output_feats_data:" << std::endl;
-  for (size_t i = 0; i < OutputFeats->Shape()[0]; i++){
-    for (size_t j = 0; j < OutputFeats->Shape()[1]; j++){
-      std::cout << output_feats_data[i * OutputFeats->Shape()[1] + j] << " ";
-    }
-    std::cout << std::endl;
-  }
-  std::cout << "output_strides_data:" << std::endl;
-  for (size_t i = 0; i < OutputStrides->Shape()[0]; i++){
-    std::cout << output_strides_data[i] << " ";
-  }
-  const int* nbmaps_data = Nbmaps_o -> template Data<int32_t>();
-  const int* nbsizes_data = Nbsizes_o -> template Data<int32_t>();
-  std::cout << "nbmaps_data:" << std::endl;
-  for (size_t i = 0; i < Nbmaps_o -> Shape()[0]; i++){
-    std::cout << nbmaps_data[i * 2] << " " << nbmaps_data[i * 2 + 1] << std::endl;
-  }
-  std::cout << "nbsizes_data:" << std::endl;
-  for(size_t i = 0; i < Nbsizes_o->Shape()[0]; i++){
-    std::cout << nbsizes_data[i] << " ";
-  }
-  std::cout << std::endl;
+  // int* output_coords_data = OutputCoords -> template MutableData<int32_t>();
+  // const float* output_feats_data = OutputFeats->template Data<float>();
+  // const int* output_strides_data = OutputStrides->template Data<int32_t>();
+  // std::cout << "print outputs:" << std::endl;
+  // std::cout << "output_coords_data:" << std::endl;
+  // for (size_t i = 0; i < OutputCoords->Shape()[0]; i++){
+  //   for (size_t j = 0; j < OutputCoords->Shape()[1]; j++){
+  //     std::cout << output_coords_data[i * OutputCoords->Shape()[1] + j] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
+  // std::cout << "output_feats_data:" << std::endl;
+  // for (size_t i = 0; i < OutputFeats->Shape()[0]; i++){
+  //   for (size_t j = 0; j < OutputFeats->Shape()[1]; j++){
+  //     std::cout << output_feats_data[i * OutputFeats->Shape()[1] + j] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
+  // std::cout << "output_strides_data:" << std::endl;
+  // for (size_t i = 0; i < OutputStrides->Shape()[0]; i++){
+  //   std::cout << output_strides_data[i] << " ";
+  // }
+  // const int* nbmaps_data = Nbmaps_o -> template Data<int32_t>();
+  // const int* nbsizes_data = Nbsizes_o -> template Data<int32_t>();
+  // std::cout << "nbmaps_data:" << std::endl;
+  // for (size_t i = 0; i < Nbmaps_o -> Shape()[0]; i++){
+  //   std::cout << nbmaps_data[i * 2] << " " << nbmaps_data[i * 2 + 1] << std::endl;
+  // }
+  // std::cout << "nbsizes_data:" << std::endl;
+  // for(size_t i = 0; i < Nbsizes_o->Shape()[0]; i++){
+  //   std::cout << nbsizes_data[i] << " ";
+  // }
+  // std::cout << std::endl;
 
 
   return Status::OK();
@@ -235,10 +237,10 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   const std::vector<int32_t> input_coords_tensor(input_coords_data, input_coords_data + input_coords_shape.Size()); 
   std::vector<int64_t> references = hash_cpu(input_coords_tensor, input_coords_shape[0]);
   //debug-zxr
-  std::cout << "References:" << std::endl;
-  for (size_t i = 0; i < references.size(); i++){
-    std::cout << references[i] << " ";
-  }
+  // std::cout << "References:" << std::endl;
+  // for (size_t i = 0; i < references.size(); i++){
+  //   std::cout << references[i] << " ";
+  // }
 
 
   std::vector<int> output_coords_vector;
@@ -264,10 +266,8 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     output_coords_vector_uncoalesced.erase(pos, output_coords_vector_uncoalesced.end());
 
     num_output_coords = output_coords_vector_uncoalesced.size();
-    std::cout << "OutputCoords:" << OutputCoords << "; &OutputCoords:" << &OutputCoords << std::endl;
     std::vector<int64_t> output_coords_shape({num_output_coords, 4});
     OutputCoords = context->Output(0, output_coords_shape);
-    std::cout << "OutputCoords:" << OutputCoords << "; &OutputCoords:" << &OutputCoords << std::endl;
     int32_t* output_coords_data = OutputCoords -> template MutableData<int32_t>();
     for (size_t i = 0; i < num_output_coords; ++i){
       output_coords_data[i * 4] = output_coords_vector_uncoalesced[i][0];
@@ -287,34 +287,29 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     output_coords_vector = std::move(output_coords_vector_t);
   }
   //debug-zxr
-  std::cout << " output coordinates vector: " << std::endl;
-  for (size_t i = 0; i < output_coords_vector.size(); i+=4){
-    std::cout << output_coords_vector[i] << " " << output_coords_vector[i+1] << " " << output_coords_vector[i+2] << " " << output_coords_vector[i+3] << std::endl;
-  }
-  std::cout << "debug-zxr: start kernel hash cpu" << std::endl;
+  // std::cout << " output coordinates vector: " << std::endl;
+  // for (size_t i = 0; i < output_coords_vector.size(); i+=4){
+  //   std::cout << output_coords_vector[i] << " " << output_coords_vector[i+1] << " " << output_coords_vector[i+2] << " " << output_coords_vector[i+3] << std::endl;
+  // }
   std::vector<int64_t> queries = kernel_hash_cpu(output_coords_vector, offsets, num_output_coords, kernel_volume);
-  std::cout << "debug-zxr: end kernel hash cpu" << std::endl;
-  std::cout << "queries:" << std::endl;
-  for (size_t i = 0; i < queries.size(); i++){
-    std::cout << queries[i] << " ";
-  }
+  // std::cout << "queries:" << std::endl;
+  // for (size_t i = 0; i < queries.size(); i++){
+  //   std::cout << queries[i] << " ";
+  // }
 
   std::vector<int64_t> indices(num_output_coords);
   std::iota(indices.begin(), indices.end(), 0);
-  std::cout << "debug-zxr: start query" << std::endl;
   std::vector<int64_t> results =  hash_query_cpu(queries, references, indices, references.size(), queries.size());
-  std::cout << "debug-zxr: end query" << std::endl;
-  std::cout << "results:" << std::endl;
-  for (size_t i = 0; i < results.size(); i++){
-    std::cout << results[i] << " ";
-  }
+
+  // std::cout << "results:" << std::endl;
+  // for (size_t i = 0; i < results.size(); i++){
+  //   std::cout << results[i] << " ";
+  // }
 
   //parse nbsizes
   //int64_t kernel_volume = kernel_shape[0] * kernel_shape[1] * kernel_shape[2];
   std::vector<int64_t> nbsizes_shape({kernel_volume});
-  std::cout << "Nbsizes:" << Nbsizes << "; &Nbsizes:" << &Nbsizes << std::endl;
   Nbsizes = context->Output(4, nbsizes_shape);
-  std::cout << "Nbsizes:" << Nbsizes << "; &Nbsizes:" << &Nbsizes << std::endl;
   std::cout << "debug-zxr: parse nbsizes" << std::endl;
   int* nbsizes_data = Nbsizes->template MutableData<int32_t>();
   for (size_t i = 0; i < kernel_volume; i++){
@@ -354,10 +349,10 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       }
     }
   }
-  std::cout << "nbmaps: " << std::endl;
-  for (size_t i = 0; i < sum_nbmaps; i++){
-    std::cout << nbmaps_data[i * 2] << " " << nbmaps_data[i * 2 + 1] << std::endl;
-  }
+  // std::cout << "nbmaps: " << std::endl;
+  // for (size_t i = 0; i < sum_nbmaps; i++){
+  //   std::cout << nbmaps_data[i * 2] << " " << nbmaps_data[i * 2 + 1] << std::endl;
+  // }
   std::cout << "debug-zxr: end buildkmap" << std::endl;
   return Status::OK();
 }
@@ -373,9 +368,17 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &Output
   const int* nbmaps_data = Nbmaps->template Data<int32_t>();
   const int* nbsizes_data = Nbsizes->template Data<int32_t>();
   size_t kernel_volume = conv_attrs_.kernel_shape_[0] * conv_attrs_.kernel_shape_[1] * conv_attrs_.kernel_shape_[2];
+
+  std::vector<float> input_feats_vector(input_feats_data, input_feats_data + InputFeats->Shape().Size());
+  std::vector<float> output_feats_vector(output_feats_data, output_feats_data + OutputFeats->Shape().Size());
+  std::vector<float> weight_vector(weight_data, weight_data + Weight->Shape().Size());
+  std::vector<int> nbmaps_vector(nbmaps_data, nbmaps_data + Nbmaps->Shape().Size());
+  std::vector<int> nbsizes_vector(nbsizes_data, nbsizes_data + Nbsizes->Shape().Size());
+
   std::cout << "debug-zxr: start convolution_forward_cpu" << std::endl;
-  convolution_forward_cpu(input_feats_data, output_feats_data, weight_data, nbmaps_data, nbsizes_data, conv_attrs_.transposed == 1, 
-                          static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), static_cast<const int>(4), 
+  convolution_forward_cpu(input_feats_vector, output_feats_vector, weight_vector, nbmaps_vector, nbsizes_vector, conv_attrs_.transposed == 1, 
+                          static_cast<const int>(Weight->Shape()[1]), static_cast<const int>(Weight->Shape()[2]), 
+                          static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), 
                           static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());                   
   std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
   return Status::OK();

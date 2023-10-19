@@ -45,6 +45,14 @@ unsigned long long read_cycles() {
 }
 
 
+void print_tensor_dim1(const char* name, int32_t* data, const int64_t* shape) {
+  size_t size_0 = shape[0];
+  std::cout << name << " [" << std::endl;
+  for (size_t i = 0; i < size_0; i++) {
+    std::cout << data[i] << " ";
+  }
+  std::cout << "]" << std::endl;
+}
 void print_tensor_dim2(const char* name, int32_t* data, const int64_t* shape) {
   size_t size_0 = shape[0];
   size_t size_1 = shape[1];
@@ -144,42 +152,63 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   size_t input_weight_size = input_node_sizes[input_weight_idx];
 
   printf("Generate test data\n");
-  std::vector<int64_t> input_coords_values(input_coords_size);
+  //std::vector<int32_t> input_coords_values(input_coords_size);
+  std::vector<int32_t> input_coords_values({  0, 29, 52,   0,
+                      27, 17, 45,   0,
+                      27, 18, 45,   0,
+                      27, 17, 46,   0,
+                      59, 42,   0,   0,
+                      71, 95, 11,   0,
+                      71, 95, 12,   0,
+                      80,   0, 54,   0,
+                      86, 68, 58,   0,
+                      93, 63, 28,   0,
+                        0,   2, 60,   1,
+                       22, 37, 0, 1,
+                       37, 53, 43,   1,
+                      19, 18, 90,   1,
+                      32, 56, 15,   1,
+                      81, 64, 55,   1,
+                      83, 81, 83,   1,
+                      83,   0, 59,   1,
+                      86, 64, 68,   1,
+                      88, 55, 98,   1});
   std::vector<float> input_feats_values(input_feats_size);
-  std::vector<int64_t> input_strides_values(input_strides_size, 1);
+  std::vector<int32_t> input_strides_values(input_strides_size, 1);
   std::vector<float> input_weight_values(input_weight_size);
 
   for (unsigned int i = 0; i < input_feats_size; i++)
-    input_feats_values[i] = (float)i / (input_feats_size + 1);
+    input_feats_values[i] = static_cast<float>(i) / (input_feats_size + 1);
 
-  for (unsigned int i = 0; i < 108U; i++)
+  for (unsigned int i = 0; i < input_weight_size; i++){
     input_weight_values[i] = (float)i / 109U;
+  }
 
-  for (unsigned int i = 0; i < input_coords_size; i++)
-    input_coords_values[i] = static_cast<int64_t>(i);
+  // for (unsigned int i = 0; i < input_coords_size; i++)
+  //   input_coords_values[i] = static_cast<int32_t>(i);
 
   // create input tensor objects from data values
   std::cout << "Create Tensors" << std::endl;
   auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-  Ort::Value input_coords_tensor = Ort::Value::CreateTensor<int64_t>(memory_info, input_coords_values.data(),
+  Ort::Value input_coords_tensor = Ort::Value::CreateTensor<int32_t>(memory_info, input_coords_values.data(),
                                                                      input_coords_size, input_node_shapes[input_coords_idx].data(), 2);
   Ort::Value input_feats_tensor = Ort::Value::CreateTensor<float>(memory_info, input_feats_values.data(),
                                                                   input_feats_size, input_node_shapes[input_feats_idx].data(), 2);
-  Ort::Value input_strides_tensor = Ort::Value::CreateTensor<int64_t>(memory_info, input_strides_values.data(),
+  Ort::Value input_strides_tensor = Ort::Value::CreateTensor<int32_t>(memory_info, input_strides_values.data(),
                                                                       input_strides_size, input_node_shapes[input_strides_idx].data(), 1);
-  Ort::Value input_weight_tensor = Ort::Value::CreateTensor<float>(memory_info, input_weight_values.data(),
-                                                                   input_weight_size, input_node_shapes[input_weight_idx].data(), 3);
+  // Ort::Value input_weight_tensor = Ort::Value::CreateTensor<float>(memory_info, input_weight_values.data(),
+  //                                                                  input_weight_size, input_node_shapes[input_weight_idx].data(), 3);
   assert(input_coords_tensor.IsTensor());
   assert(input_feats_tensor.IsTensor());
   assert(input_strides_tensor.IsTensor());
-  assert(input_weight_tensor.IsTensor());
+  // assert(input_weight_tensor.IsTensor());
 
   std::vector<Ort::Value> input_tensors;
   // don't assign directly, use move instead to avoid copying a Ort::value
   input_tensors.push_back(std::move(input_coords_tensor));
   input_tensors.push_back(std::move(input_feats_tensor));
   input_tensors.push_back(std::move(input_strides_tensor));
-  input_tensors.push_back(std::move(input_weight_tensor));
+  //input_tensors.push_back(std::move(input_weight_tensor));
 
   // auto pre_inference_cycles = read_cycles();
 
@@ -197,18 +226,23 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
 
   // print outputs
 
-  int64_t* coords_arr = output_tensors[0].GetTensorMutableData<int64_t>();
+  int32_t* coords_arr = output_tensors[0].GetTensorMutableData<int32_t>();
   float* feats_arr = output_tensors[1].GetTensorMutableData<float>();
-  int64_t* strides_arr = output_tensors[2].GetTensorMutableData<int64_t>();
-  int64_t* nbmaps_arr = output_tensors[3].GetTensorMutableData<int64_t>();
-  int64_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int64_t>();
+  int32_t* strides_arr = output_tensors[2].GetTensorMutableData<int32_t>();
+  int32_t* nbmaps_arr = output_tensors[3].GetTensorMutableData<int32_t>();
+  int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
   //int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
 
+  std::cout << "output_coords:" << std::endl;
   print_tensor_dim2(output_node_names[0], coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data());
+  std::cout << "output_feats:" << std::endl;
   print_tensor_dim2(output_node_names[1], feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data());
-  print_tensor_dim2(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
+  std::cout << "output_strides:" << std::endl;
+  print_tensor_dim1(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
+  std::cout << "output_nbmaps:" << std::endl;
   print_tensor_dim2(output_node_names[3], nbmaps_arr, output_tensors[3].GetTensorTypeAndShapeInfo().GetShape().data());
-  print_tensor_dim2(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
+  std::cout << "output_nbsizes:" << std::endl;
+  print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
 
 
   return;
@@ -305,6 +339,7 @@ int main(int argc, char* argv[]) {
     // print input shapes/dims
     input_node_shapes[i] = tensor_info.GetShape();
     input_node_sizes[i] = tensor_info.GetElementCount();
+    std::cout << "element count: " << input_node_sizes[i] << std::endl;
     printf("num_dims=%zu: [", input_node_shapes.size());
     for (size_t j = 0; j < input_node_shapes[i].size(); j++) {
       printf("%jd, ", input_node_shapes[i][j]);

@@ -20,9 +20,9 @@ class SpConv3d : public OpKernel {
  private:
 
   Status BuildKmap(OpKernelContext* context, const Tensor* InputCoords, const Tensor* InputStrides, 
-                    Tensor* OutputCoords, Tensor* Nbmaps, Tensor* Nbsizes) const ;
+                    Tensor* &OutputCoords, Tensor* &Nbmaps, Tensor* &Nbsizes) const ;
 
-  Status ConvolutionForward(const Tensor* InputFeats, Tensor* OutputFeats, const Tensor* Weight, 
+  Status ConvolutionForward(const Tensor* InputFeats, Tensor* &OutputFeats, const Tensor* Weight, 
                             const Tensor* Nbmaps, const Tensor* Nbsizes) const;
   
   Status PropagateTensorDataFromInputToOutput(const Tensor* X, Tensor* Y) const;

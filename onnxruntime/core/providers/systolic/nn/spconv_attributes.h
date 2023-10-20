@@ -146,7 +146,6 @@ struct SpConvAttributes {
 
 */
 
-
   bool kernel_shape_specified;
 //   std::vector<int64_t> kernel_shape;
   std::vector<int64_t> strides;

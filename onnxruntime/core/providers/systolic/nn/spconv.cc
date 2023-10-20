@@ -39,6 +39,9 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
 
   std::cout << "debug-zxr: start spconv3d computing" << std::endl;
   std::cout << "debug-zxr:domain:" << context->GetOpDomain() << " /type:" << context->GetOpType() << " /name:" << context->GetNodeName() << std::endl;
+  std::string node_name = context->GetNodeName();
+  bool printflag = node_name.find("/upsample/conv3d/SpConv3d")!=std::string::npos;
+
 
   ORT_RETURN_IF_ERROR(conv_attrs_.ValidateInputShape(InputCoords, InputFeats, InputStrides, Weight));
 
@@ -76,36 +79,38 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   const float* weight_data = Weight->template Data<float>();
 
 // ----------------------------------------------------------------
-  // std::cout << "print input data" << std::endl;
-  // std::cout << "input_coords_data:" << std::endl;
-  // for (size_t i = 0; i < InputCoords->Shape()[0]; i++){
-  //   for (size_t j = 0; j < InputCoords->Shape()[1]; j++){
-  //     std::cout << input_coords_data[i * InputCoords->Shape()[1] + j] << " ";
-  //   }
-  //   std::cout << std::endl;
-  // }
-  // std::cout << "input_feats_data:" << std::endl;
-  // for (size_t i = 0; i < InputFeats->Shape()[0]; i++){
-  //   for (size_t j = 0; j < InputFeats->Shape()[1]; j++){
-  //     std::cout << input_feats_data[i * InputFeats->Shape()[1] + j] << " ";
-  //   }
-  //   std::cout << std::endl;
-  // }
-  // std::cout << "input_strides_data:" << std::endl;
-  // for (size_t i = 0; i < InputStrides->Shape()[0]; i++){
-  //   std::cout << input_strides_data[i] << " ";
-  // }
-  // std::cout << std::endl;
-  // std::cout << "weight_data:" << std::endl;
-  // for (size_t i = 0; i < Weight->Shape()[0]; i++){
-  //   for (size_t j = 0; j < Weight->Shape()[1]; j++){
-  //     for (size_t k = 0; k < Weight->Shape()[2]; k++){
-  //       std::cout << weight_data[ (i * Weight->Shape()[1] + j) * Weight->Shape()[2] + k] << " ";
-  //     }
-  //     std::cout << std::endl;
-  //   }
-  //   std::cout << std::endl;
-  // }
+  if(printflag){
+    std::cout << "print input data" << std::endl;
+    std::cout << "input_coords_data:" << std::endl;
+    for (size_t i = 0; i < InputCoords->Shape()[0]; i++){
+      for (size_t j = 0; j < InputCoords->Shape()[1]; j++){
+        std::cout << input_coords_data[i * InputCoords->Shape()[1] + j] << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << "input_feats_data:" << std::endl;
+    for (size_t i = 0; i < InputFeats->Shape()[0] ; i++){
+      for (size_t j = 0; j < InputFeats->Shape()[1]; j++){
+        std::cout << input_feats_data[i * InputFeats->Shape()[1] + j] << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << "input_strides_data:" << std::endl;
+    for (size_t i = 0; i < InputStrides->Shape()[0]; i++){
+      std::cout << input_strides_data[i] << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "weight_data:" << std::endl;
+    for (size_t i = 0; i < Weight->Shape()[0] && i < 27; i++){
+      for (size_t j = 0; j < Weight->Shape()[1] && j < 10; j++){
+        for (size_t k = 0; k < Weight->Shape()[2] && k < 10; k++){
+          std::cout << weight_data[ (i * Weight->Shape()[1] + j) * Weight->Shape()[2] + k] << " ";
+        }
+        std::cout << std::endl;
+      }
+      std::cout << std::endl;
+    }
+  }
 //----------------------------------------------------------------
 
   if ( !transposed ){
@@ -137,6 +142,29 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbmaps_i, Nbmaps_o));
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
+
+    if(printflag) {
+      std::cout << " output coordinates: " << std::endl;
+      const int* output_coords_data = OutputCoords_i->template Data<int32_t>();
+      for (size_t i = 0; i < OutputCoords_i->Shape().Size(); i+=4){
+        std::cout << output_coords_data[i] << " " << output_coords_data[i+1] << " " << output_coords_data[i+2] << " " << output_coords_data[i+3] << std::endl;
+      }
+      std::cout << " nbmaps: " << std::endl;
+      const int* nbmaps_data = Nbmaps_i->template Data<int32_t>();
+      for (size_t i = 0; i < Nbmaps_i->Shape()[0]; i++){
+        std::cout << "[" << nbmaps_data[i * 2] << "," << nbmaps_data[i * 2 + 1] << "] ";
+      }
+      std::cout << std::endl;
+      std::cout << " nbsizes: " << std::endl;
+      const int* nbsizes_data = Nbsizes_i->template Data<int32_t>();
+      for (size_t i = 0; i < Nbsizes_i->Shape()[0]; i++){
+        std::cout << nbsizes_data[i] << " ";
+      }
+      std::cout << std::endl;
+    }
+    
+
+
     std::vector<int64_t> output_feats_shape({OutputCoords->Shape()[0], Weight->Shape()[2]});
     OutputFeats = context->Output(1, output_feats_shape);
     ORT_RETURN_IF_ERROR(ConvolutionForward(InputFeats, OutputFeats, Weight, Nbmaps_o, Nbsizes_o));
@@ -238,10 +266,13 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   std::vector<int64_t> references(input_coords_shape[0]);
   hash_cpu(input_coords_data, references.data(), input_coords_shape[0]);
   //debug-zxr
-  // std::cout << "References:" << std::endl;
-  // for (size_t i = 0; i < references.size(); i++){
-  //   std::cout << references[i] << " ";
+  // if(conv_attrs_.printflag){
+  //   std::cout << "References:" << std::endl;
+  //   for (size_t i = 0; i < references.size(); i++){
+  //     std::cout << references[i] << " ";
+  //   }
   // }
+  
 
   int* output_coords_data;
   int64_t num_output_coords;

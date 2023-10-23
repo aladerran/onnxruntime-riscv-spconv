@@ -174,17 +174,17 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     }
   }
 
-  // int* output_coords_data = OutputCoords -> template MutableData<int32_t>();
+  int* output_coords_data = OutputCoords -> template MutableData<int32_t>();
   // const float* output_feats_data = OutputFeats->template Data<float>();
   // const int* output_strides_data = OutputStrides->template Data<int32_t>();
   // std::cout << "print outputs:" << std::endl;
   // std::cout << "output_coords_data:" << std::endl;
-  // for (size_t i = 0; i < OutputCoords->Shape()[0]; i++){
-  //   for (size_t j = 0; j < OutputCoords->Shape()[1]; j++){
-  //     std::cout << output_coords_data[i * OutputCoords->Shape()[1] + j] << " ";
-  //   }
-  //   std::cout << std::endl;
-  // }
+  for (size_t i = 0; i < OutputCoords->Shape()[0]; i++){
+    for (size_t j = 0; j < OutputCoords->Shape()[1]; j++){
+      std::cout << output_coords_data[i * OutputCoords->Shape()[1] + j] << " ";
+    }
+    std::cout << std::endl;
+  }
   // std::cout << "output_feats_data:" << std::endl;
   // for (size_t i = 0; i < OutputFeats->Shape()[0]; i++){
   //   for (size_t j = 0; j < OutputFeats->Shape()[1]; j++){

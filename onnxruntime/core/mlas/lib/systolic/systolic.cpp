@@ -62,7 +62,7 @@ void tiled_gemm_auto(size_t dim_I, size_t dim_J, size_t dim_K,
                     A, B, D, C,
                     strideA, strideB, strideD, strideC,
                     scaleAlpha, MVIN_SCALE_IDENTITY, scaleBeta,
-                    act, ACC_SCALE_IDENTITY, /*relu6_shift= */ 0, repeating_bias,
+                    act, ACC_SCALE_IDENTITY, /*relu6_shift -> bert_scale=*/ 0, repeating_bias,
                     transA, transB,
                     /*full_c= */ false, /*low_d= */ false,
                     /*weightA= */ 3,
@@ -293,7 +293,7 @@ void SystolicConv(char accelerator_mode, int batch_size, int in_dim, int in_chan
                   /*trans_weight_1203= */ false,
                   /*trans_weight_0132= */ false,
                   input, weights, bias, output,
-                  relu, output_scale, /*relu6_shift= */ 0,
+                  relu, output_scale, /*relu6_shift deprecated*/
                   pool_size, pool_stride, pool_padding,
                   get_accelerator_mode(accelerator_mode));
 
@@ -328,7 +328,7 @@ void SystolicConvTranspose(char accelerator_mode, int batch_size, int in_dim, in
                   /*trans_weight_1203= */ false,
                   /*trans_weight_0132= */ true,
                   input, weights, bias, output,
-                  relu, output_scale, /*relu6_shift= */ 0,
+                  relu, output_scale, /*relu6_shift deprecated*/
                   0, 0, 0,
                   get_accelerator_mode(accelerator_mode));
 }
@@ -361,7 +361,7 @@ void SystolicConvBackpropFilter(char accelerator_mode, int batch_size, int in_di
                   /*trans_weight_1203= */ true,
                   /*trans_weight_0132= */ false,
                   input, weights, bias, output,
-                  relu, output_scale, /*relu6_shift= */ 0,
+                  relu, output_scale, /*relu6_shift deprecated*/
                   0, 0, 0,
                   get_accelerator_mode(accelerator_mode));
 }

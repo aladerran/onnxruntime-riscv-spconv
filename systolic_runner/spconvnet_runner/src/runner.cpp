@@ -31,6 +31,16 @@
 #include <iostream>
 #include <cmath>
 
+// Functions to print out point-cloud data
+void print_randomCoords(const char* name, int* feat, int nrows, int cols) {
+    std::cout << "=====" << name << "=====" << std::endl;
+    for (int i = 0; i < nrows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            std::cout << feat[i * cols + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 
 // Functions to generate point-cloud data
 struct Point {
@@ -326,7 +336,7 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   }
 
   printf("Done! Inference took %llu cycles \n", (post_inference_cycles - pre_inference_cycles));
-  
+
   // print outputs
 
   int32_t* coords_arr = output_tensors[0].GetTensorMutableData<int32_t>();
@@ -334,18 +344,20 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   int32_t* strides_arr = output_tensors[2].GetTensorMutableData<int32_t>();
   int32_t* nbmaps_arr = output_tensors[3].GetTensorMutableData<int32_t>();
   int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
-  //int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
+  int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
 
-  // std::cout << "output_coords:" << std::endl;
-  // print_tensor_dim2(output_node_names[0], coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data());
-  // std::cout << "output_feats:" << std::endl;
-  // print_tensor_dim2(output_node_names[1], feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data());
-  // std::cout << "output_strides:" << std::endl;
-  // print_tensor_dim1(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
-  // std::cout << "output_nbmaps:" << std::endl;
-  // print_tensor_dim2(output_node_names[3], nbmaps_arr, output_tensors[3].GetTensorTypeAndShapeInfo().GetShape().data());
-  // std::cout << "output_nbsizes:" << std::endl;
-  // print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
+  std::cout << "output_coords:" << std::endl;
+  print_tensor_dim2(output_node_names[0], coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data());
+  std::cout << "output_feats:" << std::endl;
+  print_tensor_dim2(output_node_names[1], feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data());
+  std::cout << "output_strides:" << std::endl;
+  print_tensor_dim1(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
+  std::cout << "output_nbmaps:" << std::endl;
+  print_tensor_dim2(output_node_names[3], nbmaps_arr, output_tensors[3].GetTensorTypeAndShapeInfo().GetShape().data());
+  std::cout << "output_nbsizes:" << std::endl;
+  print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
+
+  print_randomCoords("Random generated coords", input_coords_values.data(), input_coords_size/4, 4);  
 
   return;
 }

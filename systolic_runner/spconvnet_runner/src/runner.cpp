@@ -3,9 +3,14 @@
 //
 
 #include <assert.h>
-#include <iostream>
 #include <vector>
 #include <fstream>
+#include <unordered_set>
+#include <algorithm>
+#include <iostream>
+#include <cmath>
+#include <random>
+#include <chrono>
 #include <systolic/systolic_provider_factory.h>
 #include <onnxruntime_cxx_api.h>
 
@@ -21,18 +26,12 @@
 #endif
 
 #include "stb_image.h"
-
 #include "tensor_helper.h"
 #include "cmd_args.h"
 
-#include <vector>
-#include <unordered_set>
-#include <algorithm>
-#include <iostream>
-#include <cmath>
 
 // Functions to print out point-cloud data
-void print_randomCoords(const char* name, int* feat, int nrows, int cols) {
+void print_inputData(const char* name, int* feat, int nrows, int cols) {
     std::cout << "=====" << name << "=====" << std::endl;
     for (int i = 0; i < nrows; ++i) {
         for (int j = 0; j < cols; ++j) {
@@ -114,9 +113,7 @@ std::pair<std::vector<int>, std::vector<float>> generateRandomPointCloud(int siz
     return {append_batchInfo(resultCoords), feats};
 }
 
-#include <fstream>
-
-void save_input_coords(const std::vector<int32_t>& data, const std::string& filename) {
+void save_input_data(const std::vector<int32_t>& data, const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Failed to open file for writing: " << filename << std::endl;
@@ -132,6 +129,33 @@ void save_input_coords(const std::vector<int32_t>& data, const std::string& file
     file.close();
 }
 
+void save_input_data(const std::vector<float>& data, const std::string& filename) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
+
+    for (size_t i = 0; i < data.size(); ++i) {
+        file << data[i];
+        if (i != data.size() - 1) {
+            file << ",";
+        }
+    }
+    file.close();
+}
+
+
+void generateRandomValues(std::vector<float>& input) {
+    std::random_device rd; 
+    std::mt19937 gen(rd()); 
+    std::uniform_real_distribution<> dis(-1000, 1000);
+
+    for (unsigned int i = 0; i < input.size(); i++) {
+        input[i] = dis(gen); 
+    }
+
+}
 
 bool has_suffix(const std::string& str, const std::string& suffix) {
   return str.size() >= suffix.size() &&
@@ -243,63 +267,31 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
                 const std::vector<std::vector<int64_t>>& input_node_shapes,
                 const std::vector<size_t>& input_node_sizes,
                 const std::vector<const char*>& output_node_names) {
+
   std::cout << "Processing function test_infer" << std::endl;
   size_t num_inputs = input_node_names.size();
   size_t num_outputs = 6;
-  // size_t input_tensor_size = 20 * 4;  // simplify ... using known dim values to calculate size
-  //                                           // use OrtGetTensorShapeElementCount() to get official size!
   size_t input_coords_idx = 0;
   size_t input_feats_idx = 1;
   size_t input_strides_idx = 2;
-  size_t input_weight_idx = 3;
 
   size_t input_coords_size = input_node_sizes[input_coords_idx];
   size_t input_feats_size = input_node_sizes[input_feats_idx];
   size_t input_strides_size = input_node_sizes[input_strides_idx];
-  size_t input_weight_size = input_node_sizes[input_weight_idx];
 
-  printf("Generate test data\n");
-  //std::vector<int32_t> input_coords_values(input_coords_size);
-  // std::vector<int32_t> input_coords_values({  0, 29, 52,   0,
-  //                     27, 17, 45,   0,
-  //                     27, 18, 45,   0,
-  //                     27, 17, 46,   0,
-  //                     59, 42,   0,   0,
-  //                     71, 95, 11,   0,
-  //                     71, 95, 12,   0,
-  //                     80,   0, 54,   0,
-  //                     86, 68, 58,   0,
-  //                     93, 63, 28,   0,
-  //                       0,   2, 60,   1,
-  //                      22, 37, 0, 1,
-  //                      37, 53, 43,   1,
-  //                     19, 18, 90,   1,
-  //                     32, 56, 15,   1,
-  //                     81, 64, 55,   1,
-  //                     83, 81, 83,   1,
-  //                     83,   0, 59,   1,
-  //                     86, 64, 68,   1,
-  //                     88, 55, 98,   1});
+  std::cout << "Generating random inputs..." << std::endl;
+
+  // generate random input data
   auto PC = generateRandomPointCloud(input_coords_size/4);
   std::vector<int32_t> input_coords_values = std::get<0>(PC);
-  save_input_coords(input_coords_values, "input_coords.csv");
-
   std::vector<float> input_feats_values(input_feats_size);
+  generateRandomValues(input_feats_values);
   std::vector<int32_t> input_strides_values(input_strides_size, 1);
-  std::vector<float> input_weight_values(input_weight_size);
-
-  for (unsigned int i = 0; i < input_feats_size; i++)
-    input_feats_values[i] = static_cast<float>(i) / (input_feats_size + 1);
-
-  for (unsigned int i = 0; i < input_weight_size; i++){
-    input_weight_values[i] = (float)i / 109U;
-  }
-
-  // for (unsigned int i = 0; i < input_coords_size; i++)
-  //   input_coords_values[i] = static_cast<int32_t>(i);
+  save_input_data(input_feats_values, "input_feats.csv");
+  save_input_data(input_coords_values, "input_coords.csv");
 
   // create input tensor objects from data values
-  std::cout << "Create Tensors" << std::endl;
+  std::cout << "Creating tensors..." << std::endl;
   auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
   Ort::Value input_coords_tensor = Ort::Value::CreateTensor<int32_t>(memory_info, input_coords_values.data(),
                                                                      input_coords_size, input_node_shapes[input_coords_idx].data(), 2);
@@ -307,20 +299,17 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
                                                                   input_feats_size, input_node_shapes[input_feats_idx].data(), 2);
   Ort::Value input_strides_tensor = Ort::Value::CreateTensor<int32_t>(memory_info, input_strides_values.data(),
                                                                       input_strides_size, input_node_shapes[input_strides_idx].data(), 1);
-  // Ort::Value input_weight_tensor = Ort::Value::CreateTensor<float>(memory_info, input_weight_values.data(),
-  //                                                                  input_weight_size, input_node_shapes[input_weight_idx].data(), 3);
   assert(input_coords_tensor.IsTensor());
   assert(input_feats_tensor.IsTensor());
   assert(input_strides_tensor.IsTensor());
-  // assert(input_weight_tensor.IsTensor());
 
   std::vector<Ort::Value> input_tensors;
   // don't assign directly, use move instead to avoid copying a Ort::value
   input_tensors.push_back(std::move(input_coords_tensor));
   input_tensors.push_back(std::move(input_feats_tensor));
   input_tensors.push_back(std::move(input_strides_tensor));
-  //input_tensors.push_back(std::move(input_weight_tensor));
 
+  auto start_time = std::chrono::high_resolution_clock::now();
   auto pre_inference_cycles = read_cycles();
 
   // score model & input tensor, get back output tensor
@@ -329,40 +318,44 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   std::vector<Ort::Value> output_tensors = session.Run(Ort::RunOptions{nullptr}, input_node_names.data(),
                                                        input_tensors.data(), num_inputs, output_node_names.data(), num_outputs);
   auto post_inference_cycles = read_cycles();
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+      end_time - start_time);
 
   assert(output_tensors.size() == num_outputs);
   for (size_t i = 0; i < num_outputs; i++) {
     assert(output_tensors[i].IsTensor());
   }
 
-  printf("Done! Inference took %llu cycles \n", (post_inference_cycles - pre_inference_cycles));
+  printf("==========================Results==========================\n");
 
-  // print outputs
+  printf("Done! Inference took %llu cycles \n", (post_inference_cycles - pre_inference_cycles));
+  std::cout << "Execution Time: " << elapsed_time.count() << " milliseconds" << std::endl;
+
+  // print input & outputs
 
   int32_t* coords_arr = output_tensors[0].GetTensorMutableData<int32_t>();
+  // int32_t* strides_arr = output_tensors[2].GetTensorMutableData<int32_t>();
+  // int32_t* nbmaps_arr = output_tensors[3].GetTensorMutableData<int32_t>();
+  // int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
   float* feats_arr = output_tensors[1].GetTensorMutableData<float>();
-  int32_t* strides_arr = output_tensors[2].GetTensorMutableData<int32_t>();
-  int32_t* nbmaps_arr = output_tensors[3].GetTensorMutableData<int32_t>();
-  int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
-  int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
 
   std::cout << "output_coords:" << std::endl;
   print_tensor_dim2(output_node_names[0], coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data());
   std::cout << "output_feats:" << std::endl;
   print_tensor_dim2(output_node_names[1], feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data());
-  std::cout << "output_strides:" << std::endl;
-  print_tensor_dim1(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
-  std::cout << "output_nbmaps:" << std::endl;
-  print_tensor_dim2(output_node_names[3], nbmaps_arr, output_tensors[3].GetTensorTypeAndShapeInfo().GetShape().data());
-  std::cout << "output_nbsizes:" << std::endl;
-  print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
-
-  print_randomCoords("Random generated coords", input_coords_values.data(), input_coords_size/4, 4);  
+  // std::cout << "output_strides:" << std::endl;
+  // print_tensor_dim1(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
+  // std::cout << "output_nbmaps:" << std::endl;
+  // print_tensor_dim2(output_node_names[3], nbmaps_arr, output_tensors[3].GetTensorTypeAndShapeInfo().GetShape().data());
+  // std::cout << "output_nbsizes:" << std::endl;
+  // print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
 
   return;
 }
 
-// #include <sys/mman.h>
+
+
 
 int main(int argc, char* argv[]) {
   setbuf(stdout, NULL);
@@ -461,21 +454,6 @@ int main(int argc, char* argv[]) {
     printf("]\n");
   }
 
-  // if (num_input_nodes > 1) {
-  //   printf("ERROR: Graph has multiple input nodes defined.\n");
-  //   return -1;
-  // }
-
-  // Results should be...
-  // Number of inputs = 1
-  // Input 0 : name = data_0
-  // Input 0 : type = 1
-  // Input 0 : num_dims = 4
-  // Input 0 : dim 0 = 1
-  // Input 0 : dim 1 = 3
-  // Input 0 : dim 2 = 224
-  // Input 0 : dim 3 = 224
-
   size_t num_output_nodes = session.GetOutputCount();
   printf("Number of outputs = %zu\n", num_output_nodes);
   std::vector<const char*> output_node_names(num_output_nodes);
@@ -500,11 +478,6 @@ int main(int argc, char* argv[]) {
     }
     printf("]\n");
   }
-
-  // if (output_node_names.size() > 1) {
-  //   printf("ERROR: Graph has multiple output nodes defined. Please specify an output manually.\n");
-  //   return -1;
-  // }
 
   test_infer( cmd["preprocess"].as<std::string>(),
              session, input_node_names, input_node_shapes, input_node_sizes, output_node_names);

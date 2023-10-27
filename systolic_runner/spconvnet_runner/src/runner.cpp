@@ -132,6 +132,28 @@ void save_input_coords(const std::vector<int32_t>& data, const std::string& file
     file.close();
 }
 
+void save_feats(const float* data, std::vector<int64_t> shape, const std::string& filename) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
+    if(shape.size()!=2){
+      std::cerr << "invalid feats shape! get dims:" << shape.size() << std::endl;
+    }
+    for (size_t i = 0; i < shape[0]; ++i) {
+        for(size_t j = 0; j < shape[1]; ++j){
+            file << data[i * shape[1] + j];
+            if (j < shape[1]-1) {
+                file << ",";
+            }
+        }
+        if (i < shape[0]-1) {
+            file << std::endl;
+        }
+    }
+    file.close();
+}
 
 bool has_suffix(const std::string& str, const std::string& suffix) {
   return str.size() >= suffix.size() &&
@@ -359,7 +381,9 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   std::cout << "output_nbsizes:" << std::endl;
   print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
 
-  print_randomCoords("Random generated coords", input_coords_values.data(), input_coords_size/4, 4);  
+  // print_randomCoords("Random generated coords", input_coords_values.data(), input_coords_size/4, 4);  
+
+  save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape(), "output_feats.csv");
 
   return;
 }

@@ -175,23 +175,23 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   }
 
   int* output_coords_data = OutputCoords -> template MutableData<int32_t>();
-  // const float* output_feats_data = OutputFeats->template Data<float>();
+  const float* output_feats_data = OutputFeats->template Data<float>();
   // const int* output_strides_data = OutputStrides->template Data<int32_t>();
-  // std::cout << "print outputs:" << std::endl;
-  // std::cout << "output_coords_data:" << std::endl;
+  std::cout << "print outputs:" << std::endl;
+  std::cout << "output_coords_data:" << std::endl;
   for (size_t i = 0; i < OutputCoords->Shape()[0]; i++){
     for (size_t j = 0; j < OutputCoords->Shape()[1]; j++){
       std::cout << output_coords_data[i * OutputCoords->Shape()[1] + j] << " ";
     }
     std::cout << std::endl;
   }
-  // std::cout << "output_feats_data:" << std::endl;
-  // for (size_t i = 0; i < OutputFeats->Shape()[0]; i++){
-  //   for (size_t j = 0; j < OutputFeats->Shape()[1]; j++){
-  //     std::cout << output_feats_data[i * OutputFeats->Shape()[1] + j] << " ";
-  //   }
-  //   std::cout << std::endl;
-  // }
+  std::cout << "output_feats_data:" << std::endl;
+  for (size_t i = 0; i < OutputFeats->Shape()[0] && i < 10; i++){
+    for (size_t j = 0; j < OutputFeats->Shape()[1] && j < 10; j++){
+      std::cout << output_feats_data[i * OutputFeats->Shape()[1] + j] << " ";
+    }
+    std::cout << std::endl;
+  }
   // std::cout << "output_strides_data:" << std::endl;
   // for (size_t i = 0; i < OutputStrides->Shape()[0]; i++){
   //   std::cout << output_strides_data[i] << " ";
@@ -251,15 +251,28 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   }
   int64_t kernel_volume = kernel_shape[0] * kernel_shape[1] * kernel_shape[2];
   std::vector<int32_t> offsets(kernel_volume * 3);
-  for (size_t i = 0; i < kernel_shape[0]; i++) {
-    for (size_t j = 0; j < kernel_shape[1]; j++) {
-      for (size_t k = 0; k < kernel_shape[2]; k++) {
-        offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3] = x_dim_offsets[i] ;
-        offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3 + 1] = y_dim_offsets[j];
-        offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3 + 2] = z_dim_offsets[k];
+  if(kernel_volume % 2 == 1){
+    for (size_t i = 0; i < kernel_shape[2]; i++) {
+      for (size_t j = 0; j < kernel_shape[1]; j++) {
+        for (size_t k = 0; k < kernel_shape[0]; k++) {
+          offsets[( i * kernel_shape[0] * kernel_shape[1] + j * kernel_shape[0] + k ) * 3] = x_dim_offsets[k] ;
+          offsets[( i * kernel_shape[0] * kernel_shape[1] + j * kernel_shape[0] + k ) * 3 + 1] = y_dim_offsets[j];
+          offsets[( i * kernel_shape[0] * kernel_shape[1] + j * kernel_shape[0] + k ) * 3 + 2] = z_dim_offsets[i];
+        }
+      }
+    }
+  } else {
+    for (size_t i = 0; i < kernel_shape[0]; i++) {
+      for (size_t j = 0; j < kernel_shape[1]; j++) {
+        for (size_t k = 0; k < kernel_shape[2]; k++) {
+          offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3] = x_dim_offsets[i] ;
+          offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3 + 1] = y_dim_offsets[j];
+          offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3 + 2] = z_dim_offsets[k];
+        }
       }
     }
   }
+  
 
   const TensorShape& input_coords_shape = InputCoords -> Shape();
   const int* input_coords_data = InputCoords-> template Data<int32_t>();

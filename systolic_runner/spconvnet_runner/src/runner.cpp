@@ -259,37 +259,39 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   size_t input_weight_size = input_node_sizes[input_weight_idx];
 
   printf("Generate test data\n");
-  //std::vector<int32_t> input_coords_values(input_coords_size);
-  // std::vector<int32_t> input_coords_values({  0, 29, 52,   0,
-  //                     27, 17, 45,   0,
-  //                     27, 18, 45,   0,
-  //                     27, 17, 46,   0,
-  //                     59, 42,   0,   0,
-  //                     71, 95, 11,   0,
-  //                     71, 95, 12,   0,
-  //                     80,   0, 54,   0,
-  //                     86, 68, 58,   0,
-  //                     93, 63, 28,   0,
-  //                       0,   2, 60,   1,
-  //                      22, 37, 0, 1,
-  //                      37, 53, 43,   1,
-  //                     19, 18, 90,   1,
-  //                     32, 56, 15,   1,
-  //                     81, 64, 55,   1,
-  //                     83, 81, 83,   1,
-  //                     83,   0, 59,   1,
-  //                     86, 64, 68,   1,
-  //                     88, 55, 98,   1});
-  auto PC = generateRandomPointCloud(input_coords_size/4);
-  std::vector<int32_t> input_coords_values = std::get<0>(PC);
-  save_input_coords(input_coords_values, "input_coords.csv");
+  // std::vector<int32_t> input_coords_values(input_coords_size);
+  std::vector<int32_t> input_coords_values({  0, 29, 52,   0,
+                      27, 17, 45,   0,
+                      27, 18, 45,   0,
+                      27, 17, 46,   0,
+                      59, 42,   0,   0,
+                      71, 95, 11,   0,
+                      71, 95, 12,   0,
+                      80,   0, 54,   0,
+                      86, 68, 58,   0,
+                      93, 63, 28,   0,
+                        0,   2, 60,   1,
+                       22, 37, 0, 1,
+                       37, 53, 43,   1,
+                      19, 18, 90,   1,
+                      32, 56, 15,   1,
+                      81, 64, 55,   1,
+                      83, 81, 83,   1,
+                      83,   0, 59,   1,
+                      86, 64, 68,   1,
+                      88, 55, 98,   1});
+
+  // auto PC = generateRandomPointCloud(input_coords_size/4);
+  // std::vector<int32_t> input_coords_values = std::get<0>(PC);
+  // save_input_coords(input_coords_values, "input_coords.csv");
 
   std::vector<float> input_feats_values(input_feats_size);
   std::vector<int32_t> input_strides_values(input_strides_size, 1);
   std::vector<float> input_weight_values(input_weight_size);
 
   for (unsigned int i = 0; i < input_feats_size; i++)
-    input_feats_values[i] = static_cast<float>(i) / (input_feats_size + 1);
+    // input_feats_values[i] = static_cast<float>(i) / (input_feats_size + 1);
+    input_feats_values[i] = 1;
 
   for (unsigned int i = 0; i < input_weight_size; i++){
     input_weight_values[i] = (float)i / 109U;

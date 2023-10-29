@@ -79,37 +79,38 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   const float* weight_data = Weight->template Data<float>();
 
 // ----------------------------------------------------------------
-  if(printflag){
-    std::cout << "print input data" << std::endl;
-    std::cout << "input_coords_data:" << std::endl;
-    for (size_t i = 0; i < InputCoords->Shape()[0]; i++){
-      for (size_t j = 0; j < InputCoords->Shape()[1]; j++){
-        std::cout << input_coords_data[i * InputCoords->Shape()[1] + j] << " ";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << "input_feats_data:" << std::endl;
-    for (size_t i = 0; i < InputFeats->Shape()[0] ; i++){
-      for (size_t j = 0; j < InputFeats->Shape()[1]; j++){
-        std::cout << input_feats_data[i * InputFeats->Shape()[1] + j] << " ";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << "input_strides_data:" << std::endl;
-    for (size_t i = 0; i < InputStrides->Shape()[0]; i++){
-      std::cout << input_strides_data[i] << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "weight_data:" << std::endl;
-    for (size_t i = 0; i < Weight->Shape()[0] && i < 27; i++){
-      for (size_t j = 0; j < Weight->Shape()[1] && j < 10; j++){
-        for (size_t k = 0; k < Weight->Shape()[2] && k < 10; k++){
-          std::cout << weight_data[ (i * Weight->Shape()[1] + j) * Weight->Shape()[2] + k] << " ";
-        }
-        std::cout << std::endl;
-      }
-      std::cout << std::endl;
-    }
+  // if(printflag){
+  if(true){
+    // std::cout << "print input data" << std::endl;
+    // std::cout << "input_coords_data:" << std::endl;
+    // for (size_t i = 0; i < InputCoords->Shape()[0] && i < 100; i++){
+    //   for (size_t j = 0; j < InputCoords->Shape()[1]; j++){
+    //     std::cout << input_coords_data[i * InputCoords->Shape()[1] + j] << " ";
+    //   }
+    //   std::cout << std::endl;
+    // }
+    // std::cout << "input_feats_data:" << std::endl;
+    // for (size_t i = 0; i < InputFeats->Shape()[0] && i < 100; i++){
+    //   for (size_t j = 0; j < InputFeats->Shape()[1]; j++){
+    //     std::cout << input_feats_data[i * InputFeats->Shape()[1] + j] << " ";
+    //   }
+    //   std::cout << std::endl;
+    // }
+    // std::cout << "input_strides_data:" << std::endl;
+    // for (size_t i = 0; i < InputStrides->Shape()[0]; i++){
+    //   std::cout << input_strides_data[i] << " ";
+    // }
+    // std::cout << std::endl;
+    // std::cout << "weight_data:" << std::endl;
+    // for (size_t i = 0; i < Weight->Shape()[0] && i < 27; i++){
+    //   for (size_t j = 0; j < Weight->Shape()[1] && j < 10; j++){
+    //     for (size_t k = 0; k < Weight->Shape()[2] && k < 10; k++){
+    //       std::cout << weight_data[ (i * Weight->Shape()[1] + j) * Weight->Shape()[2] + k] << " ";
+    //     }
+    //     std::cout << std::endl;
+    //   }
+    //   std::cout << std::endl;
+    // }
   }
 //----------------------------------------------------------------
 
@@ -143,25 +144,25 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
 
-    if(printflag) {
-      std::cout << " output coordinates: " << std::endl;
-      const int* output_coords_data = OutputCoords_i->template Data<int32_t>();
-      for (size_t i = 0; i < OutputCoords_i->Shape().Size(); i+=4){
-        std::cout << output_coords_data[i] << " " << output_coords_data[i+1] << " " << output_coords_data[i+2] << " " << output_coords_data[i+3] << std::endl;
-      }
-      std::cout << " nbmaps: " << std::endl;
-      const int* nbmaps_data = Nbmaps_i->template Data<int32_t>();
-      for (size_t i = 0; i < Nbmaps_i->Shape()[0]; i++){
-        std::cout << "[" << nbmaps_data[i * 2] << "," << nbmaps_data[i * 2 + 1] << "] ";
-      }
-      std::cout << std::endl;
-      std::cout << " nbsizes: " << std::endl;
-      const int* nbsizes_data = Nbsizes_i->template Data<int32_t>();
-      for (size_t i = 0; i < Nbsizes_i->Shape()[0]; i++){
-        std::cout << nbsizes_data[i] << " ";
-      }
-      std::cout << std::endl;
-    }
+    // if(printflag) {
+    //   std::cout << " output coordinates: " << std::endl;
+    //   const int* output_coords_data = OutputCoords_i->template Data<int32_t>();
+    //   for (size_t i = 0; i < OutputCoords_i->Shape().Size() && i < 100; i+=4){
+    //     std::cout << output_coords_data[i] << " " << output_coords_data[i+1] << " " << output_coords_data[i+2] << " " << output_coords_data[i+3] << std::endl;
+    //   }
+    //   std::cout << " nbmaps: " << std::endl;
+    //   const int* nbmaps_data = Nbmaps_i->template Data<int32_t>();
+    //   for (size_t i = 0; i < Nbmaps_i->Shape()[0] && i < 100; i++){
+    //     std::cout << "[" << nbmaps_data[i * 2] << "," << nbmaps_data[i * 2 + 1] << "] ";
+    //   }
+    //   std::cout << std::endl;
+    //   std::cout << " nbsizes: " << std::endl;
+    //   const int* nbsizes_data = Nbsizes_i->template Data<int32_t>();
+    //   for (size_t i = 0; i < Nbsizes_i->Shape()[0]; i++){
+    //     std::cout << nbsizes_data[i] << " ";
+    //   }
+    //   std::cout << std::endl;
+    // }
     
 
 
@@ -177,21 +178,21 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   int* output_coords_data = OutputCoords -> template MutableData<int32_t>();
   const float* output_feats_data = OutputFeats->template Data<float>();
   // const int* output_strides_data = OutputStrides->template Data<int32_t>();
-  std::cout << "print outputs:" << std::endl;
-  std::cout << "output_coords_data:" << std::endl;
-  for (size_t i = 0; i < OutputCoords->Shape()[0]; i++){
-    for (size_t j = 0; j < OutputCoords->Shape()[1]; j++){
-      std::cout << output_coords_data[i * OutputCoords->Shape()[1] + j] << " ";
-    }
-    std::cout << std::endl;
-  }
-  std::cout << "output_feats_data:" << std::endl;
-  for (size_t i = 0; i < OutputFeats->Shape()[0] && i < 10; i++){
-    for (size_t j = 0; j < OutputFeats->Shape()[1] && j < 10; j++){
-      std::cout << output_feats_data[i * OutputFeats->Shape()[1] + j] << " ";
-    }
-    std::cout << std::endl;
-  }
+  // std::cout << "print outputs:" << std::endl;
+  // std::cout << "output_coords_data:" << std::endl;
+  // for (size_t i = 0; i < OutputCoords->Shape()[0] && i < 100; i++){
+  //   for (size_t j = 0; j < OutputCoords->Shape()[1] && j < 100; j++){
+  //     std::cout << output_coords_data[i * OutputCoords->Shape()[1] + j] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
+  // std::cout << "output_feats_data:" << std::endl;
+  // for (size_t i = 0; i < OutputFeats->Shape()[0] && i < 100; i++){
+  //   for (size_t j = 0; j < OutputFeats->Shape()[1] && j < 100; j++){
+  //     std::cout << output_feats_data[i * OutputFeats->Shape()[1] + j] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
   // std::cout << "output_strides_data:" << std::endl;
   // for (size_t i = 0; i < OutputStrides->Shape()[0]; i++){
   //   std::cout << output_strides_data[i] << " ";

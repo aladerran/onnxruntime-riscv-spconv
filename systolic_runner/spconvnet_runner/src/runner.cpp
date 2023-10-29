@@ -160,12 +160,54 @@ bool has_suffix(const std::string& str, const std::string& suffix) {
          str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-int getLabelOfBatchImage(const std::string& path) {
-  size_t lastidx = path.find_last_of("/\\");
-  size_t secondlastidx = path.find_last_of("/\\", lastidx - 1);
-  return std::stoi(path.substr(secondlastidx + 1, (lastidx - secondlastidx - 1)));
-}
+void read_inputs_coords_feats(const std::string& coords_path, const std::string& feats_path, 
+                    std::vector<int32_t> &coords, std::vector<float> &feats, const size_t size){
+  std::string line;
+  std::stringstream ss;
+  std::string value;
+  std::ifstream fc(coords_path);
+  if (!fc.is_open()) {
+    std::cerr << "Failed to open file: " << coords_path << std::endl;
+    return;
+  }
+  size_t count = 0;
+  while (std::getline(fc, line)) {
+    value.clear();
+    ss.clear();
+    ss.str(line);
+    while (std::getline(ss, value, ',')) {
+      coords[count] = static_cast<int32_t>(std::stoi(value));
+      count++;
+    }
+  }
+  fc.close();
+  // for(int i = 0; i <10 ; i++){
+  //   std::cout << coords[i] << " ";
+  // }
+  // std::cout << std::endl;
 
+  std::ifstream ff(feats_path);
+  if (!ff.is_open()) {
+    std::cerr << "Failed to open file: " << feats_path << std::endl;
+    return;
+  }
+  count = 0;
+  while (std::getline(ff, line)) {
+    value.clear();
+    ss.clear();
+    ss.str(line);
+    while (std::getline(ss, value, ',')) {
+      feats[count] = std::stof(value);
+      count++;
+    }
+  }
+  ff.close();
+  // for(int i = 0; i <10 ; i++){
+  //   std::cout << feats[i] << " ";
+  // }
+  // std::cout << std::endl;
+
+}
 
 unsigned long long read_cycles() {
   unsigned long long cycles;
@@ -268,40 +310,38 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   std::cout << "Processing function test_infer" << std::endl;
   size_t num_inputs = input_node_names.size();
   size_t num_outputs = 6;
-  // size_t input_tensor_size = 20 * 4;  // simplify ... using known dim values to calculate size
-  //                                           // use OrtGetTensorShapeElementCount() to get official size!
   size_t input_coords_idx = 0;
   size_t input_feats_idx = 1;
   size_t input_strides_idx = 2;
-  size_t input_weight_idx = 3;
+  // size_t input_weight_idx = 3;
 
   size_t input_coords_size = input_node_sizes[input_coords_idx];
   size_t input_feats_size = input_node_sizes[input_feats_idx];
   size_t input_strides_size = input_node_sizes[input_strides_idx];
-  size_t input_weight_size = input_node_sizes[input_weight_idx];
+  // size_t input_weight_size = input_node_sizes[input_weight_idx];
 
   printf("Generate test data\n");
-  // std::vector<int32_t> input_coords_values(input_coords_size);
-  std::vector<int32_t> input_coords_values({  0, 29, 52,   0,
-                      27, 17, 45,   0,
-                      27, 18, 45,   0,
-                      27, 17, 46,   0,
-                      59, 42,   0,   0,
-                      71, 95, 11,   0,
-                      71, 95, 12,   0,
-                      80,   0, 54,   0,
-                      86, 68, 58,   0,
-                      93, 63, 28,   0,
-                        0,   2, 60,   1,
-                       22, 37, 0, 1,
-                       37, 53, 43,   1,
-                      19, 18, 90,   1,
-                      32, 56, 15,   1,
-                      81, 64, 55,   1,
-                      83, 81, 83,   1,
-                      83,   0, 59,   1,
-                      86, 64, 68,   1,
-                      88, 55, 98,   1});
+  std::vector<int32_t> input_coords_values(input_coords_size);
+  // std::vector<int32_t> input_coords_values({  0, 29, 52,   0,
+  //                     27, 17, 45,   0,
+  //                     27, 18, 45,   0,
+  //                     27, 17, 46,   0,
+  //                     59, 42,   0,   0,
+  //                     71, 95, 11,   0,
+  //                     71, 95, 12,   0,
+  //                     80,   0, 54,   0,
+  //                     86, 68, 58,   0,
+  //                     93, 63, 28,   0,
+  //                       0,   2, 60,   1,
+  //                      22, 37, 0, 1,
+  //                      37, 53, 43,   1,
+  //                     19, 18, 90,   1,
+  //                     32, 56, 15,   1,
+  //                     81, 64, 55,   1,
+  //                     83, 81, 83,   1,
+  //                     83,   0, 59,   1,
+  //                     86, 64, 68,   1,
+  //                     88, 55, 98,   1});
 
   // auto PC = generateRandomPointCloud(input_coords_size/4);
   // std::vector<int32_t> input_coords_values = std::get<0>(PC);
@@ -309,18 +349,16 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
 
   std::vector<float> input_feats_values(input_feats_size);
   std::vector<int32_t> input_strides_values(input_strides_size, 1);
-  std::vector<float> input_weight_values(input_weight_size);
+  // std::vector<float> input_weight_values(input_weight_size);
+  
+  read_inputs_coords_feats("coords.csv", "feats.csv", input_coords_values, input_feats_values, 10000);
+  // for (unsigned int i = 0; i < input_feats_size; i++)
+  //   input_feats_values[i] = 1;
 
-  for (unsigned int i = 0; i < input_feats_size; i++)
-    // input_feats_values[i] = static_cast<float>(i) / (input_feats_size + 1);
-    input_feats_values[i] = 1;
+  // for (unsigned int i = 0; i < input_weight_size; i++){
+  //   input_weight_values[i] = (float)i / 109U;
+  // }
 
-  for (unsigned int i = 0; i < input_weight_size; i++){
-    input_weight_values[i] = (float)i / 109U;
-  }
-
-  // for (unsigned int i = 0; i < input_coords_size; i++)
-  //   input_coords_values[i] = static_cast<int32_t>(i);
 
   // create input tensor objects from data values
   std::cout << "Create Tensors" << std::endl;
@@ -348,7 +386,6 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   auto pre_inference_cycles = read_cycles();
 
   // score model & input tensor, get back output tensor
-  // auto output_tensors = session.Run(Ort::RunOptions{nullptr}, input_node_names.data(), input_tensors.data(), 4, output_node_names.data(), 6);
   std::cout << "Start Running" << std::endl;
   std::vector<Ort::Value> output_tensors = session.Run(Ort::RunOptions{nullptr}, input_node_names.data(),
                                                        input_tensors.data(), num_inputs, output_node_names.data(), num_outputs);
@@ -370,16 +407,16 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
   int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
 
-  std::cout << "output_coords:" << std::endl;
-  print_tensor_dim2(output_node_names[0], coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data());
-  std::cout << "output_feats:" << std::endl;
-  print_tensor_dim2(output_node_names[1], feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data());
-  std::cout << "output_strides:" << std::endl;
-  print_tensor_dim1(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
-  std::cout << "output_nbmaps:" << std::endl;
-  print_tensor_dim2(output_node_names[3], nbmaps_arr, output_tensors[3].GetTensorTypeAndShapeInfo().GetShape().data());
-  std::cout << "output_nbsizes:" << std::endl;
-  print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
+  // std::cout << "output_coords:" << std::endl;
+  // print_tensor_dim2(output_node_names[0], coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data());
+  // std::cout << "output_feats:" << std::endl;
+  // print_tensor_dim2(output_node_names[1], feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data());
+  // std::cout << "output_strides:" << std::endl;
+  // print_tensor_dim1(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
+  // std::cout << "output_nbmaps:" << std::endl;
+  // print_tensor_dim2(output_node_names[3], nbmaps_arr, output_tensors[3].GetTensorTypeAndShapeInfo().GetShape().data());
+  // std::cout << "output_nbsizes:" << std::endl;
+  // print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
 
   // print_randomCoords("Random generated coords", input_coords_values.data(), input_coords_size/4, 4);  
 

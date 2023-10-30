@@ -133,7 +133,7 @@ void save_input_coords(const std::vector<int32_t>& data, const std::string& file
 }
 
 void save_feats(const float* data, std::vector<int64_t> shape, const std::string& filename) {
-    std::ofstream file(filename);
+    std::ofstream file(filename, std::ios::binary);
     if (!file.is_open()) {
         std::cerr << "Failed to open file for writing: " << filename << std::endl;
         return;
@@ -141,17 +141,16 @@ void save_feats(const float* data, std::vector<int64_t> shape, const std::string
     if(shape.size()!=2){
       std::cerr << "invalid feats shape! get dims:" << shape.size() << std::endl;
     }
-    for (size_t i = 0; i < shape[0]; ++i) {
-        for(size_t j = 0; j < shape[1]; ++j){
-            file << data[i * shape[1] + j];
-            if (j < shape[1]-1) {
-                file << ",";
-            }
-        }
-        if (i < shape[0]-1) {
-            file << std::endl;
-        }
-    }
+
+    // 将 shape 写入文件
+    int64_t rows = shape[0];
+    int64_t cols = shape[1];
+    file.write(reinterpret_cast<const char*>(&rows), sizeof(int64_t));
+    file.write(reinterpret_cast<const char*>(&cols), sizeof(int64_t));
+
+    // 将数据写入文件
+    file.write(reinterpret_cast<const char*>(data), rows * cols * sizeof(float));
+
     file.close();
 }
 
@@ -420,7 +419,7 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
 
   // print_randomCoords("Random generated coords", input_coords_values.data(), input_coords_size/4, 4);  
 
-  save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape(), "output_feats.csv");
+  save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape(), "output_feats");
 
   return;
 }

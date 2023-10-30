@@ -40,7 +40,7 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   std::cout << "debug-zxr: start spconv3d computing" << std::endl;
   std::cout << "debug-zxr:domain:" << context->GetOpDomain() << " /type:" << context->GetOpType() << " /name:" << context->GetNodeName() << std::endl;
   std::string node_name = context->GetNodeName();
-  bool printflag = node_name.find("/upsample/conv3d/SpConv3d")!=std::string::npos;
+  bool printflag = node_name.find("encoders.0/convblock/conv3d")!=std::string::npos;
 
 
   ORT_RETURN_IF_ERROR(conv_attrs_.ValidateInputShape(InputCoords, InputFeats, InputStrides, Weight));
@@ -129,6 +129,21 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     std::vector<int64_t> output_feats_shape({OutputCoords->Shape()[0], Weight->Shape()[2]});
     std::cout << "debug-zxr: @5" << std::endl;
     OutputFeats = context->Output(1, output_feats_shape);
+
+
+    if(printflag){
+      std::cout << "printflag on, print nbmaps" << std::endl;
+      int rows = static_cast<int32_t>(InputCoords->Shape()[0]);
+      const int32_t* nbmaps_data = Nbmaps_o->template Data<int32_t>();
+      for (int i = 0; i < Nbmaps_o->Shape()[0]; i++){
+        int p = nbmaps_data[i*2];
+        int q = nbmaps_data[i*2+1];
+        if(p<0 || q <0 || p>rows || q>rows){
+          std::cout << "i:" << i << " | " << p << "," << q << std::endl;
+        }
+      }
+    }
+
 
     ORT_RETURN_IF_ERROR(ConvolutionForward(InputFeats, OutputFeats, Weight, Nbmaps_o, Nbsizes_o));
     int* output_strides_data = OutputStrides-> template MutableData<int32_t>();
@@ -334,20 +349,22 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   // }
   std::vector<int64_t> queries(num_output_coords * kernel_volume);
   kernel_hash_cpu(output_coords_data, offsets.data(), queries.data(), num_output_coords, kernel_volume);
-  // std::cout << "queries:" << std::endl;
-  // for (size_t i = 0; i < queries.size(); i++){
-  //   std::cout << queries[i] << " ";
-  // }
 
-  std::vector<int64_t> indices(num_output_coords);
+  std::vector<int64_t> indices(references.size());
   std::iota(indices.begin(), indices.end(), 0);
   std::vector<int64_t> results(queries.size());
   hash_query_cpu(queries.data(), references.data(), indices.data(), results.data(), references.size(), queries.size());
 
-  // std::cout << "results:" << std::endl;
-  // for (size_t i = 0; i < results.size(); i++){
-  //   std::cout << results[i] << " ";
+  // std::cout << "indices piece:" << std::endl;
+  // for (int i = 0; i < 10 && i < num_output_coords;i ++){
+  //   std::cout << indices[i] << " ";
+  // } 
+  // std::cout << std::endl;
+  // for (int i = indices.size()-10; i < indices.size();i ++){
+  //   std::cout << indices[i] << " ";
   // }
+  // std::cout << std::endl;
+  // std::cout << "rows:" << indices.size() << " references.size:"<< references.size() << std::endl;
 
   //parse nbsizes
   //int64_t kernel_volume = kernel_shape[0] * kernel_shape[1] * kernel_shape[2];
@@ -358,6 +375,10 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   for (size_t i = 0; i < kernel_volume; i++){
     size_t sum = 0;
     for(size_t j = 0; j < num_output_coords; j++){
+      int result = results[i * num_output_coords + j];
+      if(result > input_coords_shape[0] || result < 0){
+        std::cout << "error result, at offset index " << i << " , coords index " << j << " , value:" << result << std::endl;
+      }
       if(results[i * num_output_coords + j] != 0) {
         sum++;
       }

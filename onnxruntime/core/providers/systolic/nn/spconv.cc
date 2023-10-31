@@ -23,6 +23,39 @@ ONNX_OPERATOR_KERNEL_EX(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     SpConv3d<float>);
 
+
+void write_csv(const int* data, const TensorShape& shape, const std::string& filename) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+
+        std::ofstream createFile(filename);
+        createFile.close();
+        
+        // 重新尝试打开文件
+        file.open(filename, std::ios::app | std::ios::out);
+        if (!file.is_open()) {
+            std::cerr << "Failed to create file: " << filename << std::endl;
+            return;
+        }
+    }
+
+    for (int i = 0; i < shape[0]; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            file << data[i * shape[1] + j];
+            if (j < shape[1] - 1) {
+                file << ",";
+            }
+        }
+        if (i < shape[0] - 1) {
+            file << "\n";
+        }
+    }
+
+    file.close();
+}
+
+
 template <typename T>
 Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   const Tensor* InputCoords = context->Input<Tensor>(0);
@@ -214,6 +247,13 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   // }
   // const int* nbmaps_data = Nbmaps_o -> template Data<int32_t>();
   // const int* nbsizes_data = Nbsizes_o -> template Data<int32_t>();
+  // const TensorShape& nbmaps_shape = Nbmaps_o -> Shape();
+  // std::string prefix = "nbmaps";
+  // prefix = prefix.append(node_name);
+  // std::replace(prefix.begin()+7, prefix.end(),'/', '.');
+  // prefix = prefix.append(".csv");
+  // std::cout << prefix << std::endl;
+  // write_csv(nbmaps_data, nbmaps_shape, prefix);
   // std::cout << "nbmaps_data:" << std::endl;
   // for (size_t i = 0; i < Nbmaps_o -> Shape()[0]; i++){
   //   std::cout << nbmaps_data[i * 2] << " " << nbmaps_data[i * 2 + 1] << std::endl;
@@ -252,6 +292,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   if (strides.empty()) {
     strides.resize(kernel_shape.size(), 1);
   }
+  const int* input_strides_data = InputStrides->template Data<int32_t>();
   // build kernel offsets
   std::vector<int32_t> x_dim_offsets(kernel_shape[0]);
   std::vector<int32_t> y_dim_offsets(kernel_shape[1]);
@@ -271,9 +312,9 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     for (size_t i = 0; i < kernel_shape[2]; i++) {
       for (size_t j = 0; j < kernel_shape[1]; j++) {
         for (size_t k = 0; k < kernel_shape[0]; k++) {
-          offsets[( i * kernel_shape[0] * kernel_shape[1] + j * kernel_shape[0] + k ) * 3] = x_dim_offsets[k] ;
-          offsets[( i * kernel_shape[0] * kernel_shape[1] + j * kernel_shape[0] + k ) * 3 + 1] = y_dim_offsets[j];
-          offsets[( i * kernel_shape[0] * kernel_shape[1] + j * kernel_shape[0] + k ) * 3 + 2] = z_dim_offsets[i];
+          offsets[( i * kernel_shape[0] * kernel_shape[1] + j * kernel_shape[0] + k ) * 3] = x_dim_offsets[k] * input_strides_data[0];
+          offsets[( i * kernel_shape[0] * kernel_shape[1] + j * kernel_shape[0] + k ) * 3 + 1] = y_dim_offsets[j] * input_strides_data[1];
+          offsets[( i * kernel_shape[0] * kernel_shape[1] + j * kernel_shape[0] + k ) * 3 + 2] = z_dim_offsets[i] * input_strides_data[2];
         }
       }
     }
@@ -281,9 +322,9 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     for (size_t i = 0; i < kernel_shape[0]; i++) {
       for (size_t j = 0; j < kernel_shape[1]; j++) {
         for (size_t k = 0; k < kernel_shape[2]; k++) {
-          offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3] = x_dim_offsets[i] ;
-          offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3 + 1] = y_dim_offsets[j];
-          offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3 + 2] = z_dim_offsets[k];
+          offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3] = x_dim_offsets[i] * input_strides_data[0];
+          offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3 + 1] = y_dim_offsets[j] * input_strides_data[1];
+          offsets[( i * kernel_shape[1] * kernel_shape[2] + j * kernel_shape[2] + k ) * 3 + 2] = z_dim_offsets[k] * input_strides_data[2];
         }
       }
     }
@@ -307,7 +348,6 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   int64_t num_output_coords;
   if ( conv_attrs_.strides[0] > 1 || conv_attrs_.strides[1] > 1 || conv_attrs_.strides[2] > 1) {
     //downsampling
-    const int* input_strides_data = InputStrides->template Data<int32_t>();
     std::vector<int32_t> sample_stride(3); 
     for (size_t i = 0; i < 3; i++) {
       sample_stride[i] = strides[i] * input_strides_data[i];

@@ -25,134 +25,54 @@
 #include "tensor_helper.h"
 #include "cmd_args.h"
 
-#include <vector>
-#include <unordered_set>
-#include <algorithm>
-#include <iostream>
-#include <cmath>
 
-// Functions to print out point-cloud data
-void print_randomCoords(const char* name, int* feat, int nrows, int cols) {
-    std::cout << "=====" << name << "=====" << std::endl;
-    for (int i = 0; i < nrows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            std::cout << feat[i * cols + j] << " ";
-        }
-        std::cout << std::endl;
-    }
-}
-
-// Functions to generate point-cloud data
-struct Point {
-    int x, y, z;
-};
-
-struct HashFunction {
-    std::size_t operator()(const Point& p) const {
-        return std::hash<int>()(p.x) ^ std::hash<int>()(p.y) ^ std::hash<int>()(p.z);
-    }
-};
-
-bool operator==(const Point& p1, const Point& p2) {
-    return p1.x == p2.x && p1.y == p2.y && p1.z == p2.z;
-}
-
-std::vector<Point> sparseQuantize(const std::vector<Point>& coords, float voxelSize) {
-    std::unordered_set<Point, HashFunction> uniqueCoords;
-    for (const auto& coord : coords) {
-        Point quantizedCoord{
-            static_cast<int>(std::floor(coord.x / voxelSize)),
-            static_cast<int>(std::floor(coord.y / voxelSize)),
-            static_cast<int>(std::floor(coord.z / voxelSize))
-        };
-        uniqueCoords.insert(quantizedCoord);
-    }
-
-    std::vector<Point> result(uniqueCoords.begin(), uniqueCoords.end());
-    return result;
-}
-
-std::vector<int> append_batchInfo(const std::vector<int>& originalCoords) {
-    std::vector<int> newCoords(originalCoords.size() / 3 * 4, 0);
-
-    for (size_t i = 0; i < originalCoords.size() / 3; ++i) {
-        newCoords[i * 4] = originalCoords[i * 3];        
-        newCoords[i * 4 + 1] = originalCoords[i * 3 + 1]; 
-        newCoords[i * 4 + 2] = originalCoords[i * 3 + 2]; 
-        // Fourth dimension is already initialized to 0
-    }
-
-    return newCoords;
-}
-
-std::pair<std::vector<int>, std::vector<float>> generateRandomPointCloud(int size = 10000, float voxelSize = 0.2) {
-    std::vector<int> coords(size * 3);  // Flatten to 1D vector
-    std::vector<float> feats(size * 4);  // Flatten to 1D vector
-
-    for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            coords[i * 3 + j] = static_cast<int>(rand() % 100);  // Random coordinates
-            feats[i * 4 + j] = static_cast<float>(rand()) / RAND_MAX * 10.0f;  // Random features
-        }
-        feats[i * 4 + 3] = static_cast<float>(rand()) / RAND_MAX * 10.0f;  // Random features
-    }
-
-    std::vector<Point> pointCoords(size);
-    for (int i = 0; i < size; ++i) {
-        pointCoords[i] = {coords[i * 3], coords[i * 3 + 1], coords[i * 3 + 2]};
-    }
-
-    std::vector<Point> uniqueCoords = sparseQuantize(pointCoords, voxelSize);
-
-    std::vector<int> resultCoords(uniqueCoords.size() * 3);
-    for (size_t i = 0; i < uniqueCoords.size(); ++i) {
-        resultCoords[i * 3] = uniqueCoords[i].x;
-        resultCoords[i * 3 + 1] = uniqueCoords[i].y;
-        resultCoords[i * 3 + 2] = uniqueCoords[i].z;
-    }
-
-    return {append_batchInfo(resultCoords), feats};
-}
-
-#include <fstream>
-
-void save_input_coords(const std::vector<int32_t>& data, const std::string& filename) {
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+void save_coords(int32_t* data, const int64_t* shape, const char* filename) {
+    std::ofstream outFile(filename);
+    if (!outFile.is_open()) {
+        std::cerr << "Failed to open " << filename << " for writing." << std::endl;
         return;
     }
 
-    for (size_t i = 0; i < data.size(); ++i) {
-        file << data[i];
-        if (i != data.size() - 1) {
-            file << ",";
+    size_t size_0 = shape[0];
+    size_t size_1 = shape[1];
+
+    for (size_t i = 0; i < size_0; i++) {
+        for (size_t j = 0; j < size_1; j++) {
+            outFile << data[i * size_1 + j];
+            if (j != size_1 - 1) {
+                outFile << ",";
+            }
         }
+        outFile << std::endl;
     }
-    file.close();
+    
+    outFile.close();
 }
 
-void save_feats(const float* data, std::vector<int64_t> shape, const std::string& filename) {
-    std::ofstream file(filename, std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+
+void save_feats(float* data, const int64_t* shape, const char* filename) {
+    std::ofstream outFile(filename);
+    if (!outFile.is_open()) {
+        std::cerr << "Failed to open " << filename << " for writing." << std::endl;
         return;
     }
-    if(shape.size()!=2){
-      std::cerr << "invalid feats shape! get dims:" << shape.size() << std::endl;
+
+    size_t size_0 = shape[0];
+    size_t size_1 = shape[1];
+
+    for (size_t i = 0; i < size_0; i++) {
+        for (size_t j = 0; j < size_1; j++) {
+            outFile << data[i * size_1 + j];
+            if (j != size_1 - 1) {
+                outFile << ",";
+            }
+        }
+        outFile << std::endl;
     }
-
-    // 将 shape 写入文件
-    int64_t rows = shape[0];
-    int64_t cols = shape[1];
-    file.write(reinterpret_cast<const char*>(&rows), sizeof(int64_t));
-    file.write(reinterpret_cast<const char*>(&cols), sizeof(int64_t));
-
-    // 将数据写入文件
-    file.write(reinterpret_cast<const char*>(data), rows * cols * sizeof(float));
-
-    file.close();
+    
+    outFile.close();
 }
+
 
 bool has_suffix(const std::string& str, const std::string& suffix) {
   return str.size() >= suffix.size() &&
@@ -160,7 +80,7 @@ bool has_suffix(const std::string& str, const std::string& suffix) {
 }
 
 void read_inputs_coords_feats(const std::string& coords_path, const std::string& feats_path, 
-                    std::vector<int32_t> &coords, std::vector<float> &feats, const size_t size){
+                    std::vector<int32_t> &coords, std::vector<float> &feats){
   std::string line;
   std::stringstream ss;
   std::string value;
@@ -180,10 +100,6 @@ void read_inputs_coords_feats(const std::string& coords_path, const std::string&
     }
   }
   fc.close();
-  // for(int i = 0; i <10 ; i++){
-  //   std::cout << coords[i] << " ";
-  // }
-  // std::cout << std::endl;
 
   std::ifstream ff(feats_path);
   if (!ff.is_open()) {
@@ -201,11 +117,6 @@ void read_inputs_coords_feats(const std::string& coords_path, const std::string&
     }
   }
   ff.close();
-  // for(int i = 0; i <10 ; i++){
-  //   std::cout << feats[i] << " ";
-  // }
-  // std::cout << std::endl;
-
 }
 
 unsigned long long read_cycles() {
@@ -214,92 +125,6 @@ unsigned long long read_cycles() {
   return cycles;
 }
 
-
-void print_tensor_dim1(const char* name, int32_t* data, const int64_t* shape) {
-  size_t size_0 = shape[0];
-  std::cout << name << " [" << std::endl;
-  for (size_t i = 0; i < size_0; i++) {
-    std::cout << data[i] << " ";
-  }
-  std::cout << "]" << std::endl;
-}
-void print_tensor_dim2(const char* name, int32_t* data, const int64_t* shape) {
-  size_t size_0 = shape[0];
-  size_t size_1 = shape[1];
-  std::cout << name << " [" << std::endl;
-  for (size_t i = 0; i < size_0; i++) {
-    std::cout <<" [" ;
-    for (size_t j = 0; j < size_1; j++) {
-      std::cout << data[i * size_1 + j] << " ";
-    }
-    std::cout << "]" << std::endl;
-  }
-  std::cout << "]" << std::endl;
-}
-// template<typename T>
-void print_tensor_dim2(const char* name, int64_t* data, const int64_t* shape) {
-  size_t size_0 = shape[0];
-  size_t size_1 = shape[1];
-  std::cout << name << " [" << std::endl;
-  for (size_t i = 0; i < size_0; i++) {
-    std::cout <<" [" ;
-    for (size_t j = 0; j < size_1; j++) {
-      std::cout << data[i * size_1 + j] << " ";
-    }
-    std::cout << "]" << std::endl;
-  }
-  std::cout << "]" << std::endl;
-}
-void print_tensor_dim2(const char* name, float* data, const int64_t* shape) {
-  size_t size_0 = shape[0];
-  size_t size_1 = shape[1];
-  std::cout << name << " [" << std::endl;
-  for (size_t i = 0; i < size_0; i++) {
-    std::cout <<" [" ;
-    for (size_t j = 0; j < size_1; j++) {
-      std::cout << data[i * size_1 + j] << " ";
-    }
-    std::cout << "]" << std::endl;
-  }
-  std::cout << "]" << std::endl;
-}
-// template<typename T>
-void print_tensor_dim3(const char* name, float* data, const int64_t* shape) {
-  size_t size_0 = shape[0];
-  size_t size_1 = shape[1];
-  size_t size_2 = shape[2];
-  std::cout << name << " [" << std::endl;
-  for (size_t i = 0; i < size_0; i++) {
-    std::cout << " [";
-    for (size_t j = 0; j < size_1; j++) {
-      std::cout << " [";
-      for (size_t k = 0; k < size_2; k++) {
-        std::cout << data[(i * size_1 + j) * size_2 + k] << " ";
-      }
-      std::cout << "]" << std::endl;
-    }
-    std::cout << "]" << std::endl;
-  }
-  std::cout << "]" << std::endl;
-}
-void print_tensor_dim3(const char* name, float* data, const int32_t* shape) {
-  size_t size_0 = shape[0];
-  size_t size_1 = shape[1];
-  size_t size_2 = shape[2];
-  std::cout << name << " [" << std::endl;
-  for (size_t i = 0; i < size_0; i++) {
-    std::cout << " [";
-    for (size_t j = 0; j < size_1; j++) {
-      std::cout << " [";
-      for (size_t k = 0; k < size_2; k++) {
-        std::cout << data[(i * size_1 + j) * size_2 + k] << " ";
-      }
-      std::cout << "]" << std::endl;
-    }
-    std::cout << "]" << std::endl;
-  }
-  std::cout << "]" << std::endl;
-}
 
 void test_infer(const std::string& preprocess, Ort::Session& session,
                 const std::vector<const char*>& input_node_names,
@@ -312,52 +137,17 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   size_t input_coords_idx = 0;
   size_t input_feats_idx = 1;
   size_t input_strides_idx = 2;
-  // size_t input_weight_idx = 3;
 
   size_t input_coords_size = input_node_sizes[input_coords_idx];
   size_t input_feats_size = input_node_sizes[input_feats_idx];
   size_t input_strides_size = input_node_sizes[input_strides_idx];
-  // size_t input_weight_size = input_node_sizes[input_weight_idx];
 
-  printf("Generate test data\n");
+  printf("Read test data\n");
   std::vector<int32_t> input_coords_values(input_coords_size);
-  // std::vector<int32_t> input_coords_values({  0, 29, 52,   0,
-  //                     27, 17, 45,   0,
-  //                     27, 18, 45,   0,
-  //                     27, 17, 46,   0,
-  //                     59, 42,   0,   0,
-  //                     71, 95, 11,   0,
-  //                     71, 95, 12,   0,
-  //                     80,   0, 54,   0,
-  //                     86, 68, 58,   0,
-  //                     93, 63, 28,   0,
-  //                       0,   2, 60,   1,
-  //                      22, 37, 0, 1,
-  //                      37, 53, 43,   1,
-  //                     19, 18, 90,   1,
-  //                     32, 56, 15,   1,
-  //                     81, 64, 55,   1,
-  //                     83, 81, 83,   1,
-  //                     83,   0, 59,   1,
-  //                     86, 64, 68,   1,
-  //                     88, 55, 98,   1});
-
-  // auto PC = generateRandomPointCloud(input_coords_size/4);
-  // std::vector<int32_t> input_coords_values = std::get<0>(PC);
-  // save_input_coords(input_coords_values, "input_coords.csv");
-
   std::vector<float> input_feats_values(input_feats_size);
   std::vector<int32_t> input_strides_values(input_strides_size, 1);
-  // std::vector<float> input_weight_values(input_weight_size);
   
-  read_inputs_coords_feats("coords.csv", "feats.csv", input_coords_values, input_feats_values, 10000);
-  // for (unsigned int i = 0; i < input_feats_size; i++)
-  //   input_feats_values[i] = 1;
-
-  // for (unsigned int i = 0; i < input_weight_size; i++){
-  //   input_weight_values[i] = (float)i / 109U;
-  // }
-
+  read_inputs_coords_feats("coords.csv", "feats.csv", input_coords_values, input_feats_values);
 
   // create input tensor objects from data values
   std::cout << "Create Tensors" << std::endl;
@@ -368,19 +158,16 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
                                                                   input_feats_size, input_node_shapes[input_feats_idx].data(), 2);
   Ort::Value input_strides_tensor = Ort::Value::CreateTensor<int32_t>(memory_info, input_strides_values.data(),
                                                                       input_strides_size, input_node_shapes[input_strides_idx].data(), 1);
-  // Ort::Value input_weight_tensor = Ort::Value::CreateTensor<float>(memory_info, input_weight_values.data(),
-  //                                                                  input_weight_size, input_node_shapes[input_weight_idx].data(), 3);
+
   assert(input_coords_tensor.IsTensor());
   assert(input_feats_tensor.IsTensor());
   assert(input_strides_tensor.IsTensor());
-  // assert(input_weight_tensor.IsTensor());
 
   std::vector<Ort::Value> input_tensors;
   // don't assign directly, use move instead to avoid copying a Ort::value
   input_tensors.push_back(std::move(input_coords_tensor));
   input_tensors.push_back(std::move(input_feats_tensor));
   input_tensors.push_back(std::move(input_strides_tensor));
-  //input_tensors.push_back(std::move(input_weight_tensor));
 
   auto pre_inference_cycles = read_cycles();
 
@@ -401,30 +188,16 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
 
   int32_t* coords_arr = output_tensors[0].GetTensorMutableData<int32_t>();
   float* feats_arr = output_tensors[1].GetTensorMutableData<float>();
-  int32_t* strides_arr = output_tensors[2].GetTensorMutableData<int32_t>();
-  int32_t* nbmaps_arr = output_tensors[3].GetTensorMutableData<int32_t>();
-  int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
-  int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
+  // int32_t* strides_arr = output_tensors[2].GetTensorMutableData<int32_t>();
+  // int32_t* nbmaps_arr = output_tensors[3].GetTensorMutableData<int32_t>();
+  // int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
+  // int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
 
-  // std::cout << "output_coords:" << std::endl;
-  // print_tensor_dim2(output_node_names[0], coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data());
-  // std::cout << "output_feats:" << std::endl;
-  // print_tensor_dim2(output_node_names[1], feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data());
-  // std::cout << "output_strides:" << std::endl;
-  // print_tensor_dim1(output_node_names[2], strides_arr, output_tensors[2].GetTensorTypeAndShapeInfo().GetShape().data());
-  // std::cout << "output_nbmaps:" << std::endl;
-  // print_tensor_dim2(output_node_names[3], nbmaps_arr, output_tensors[3].GetTensorTypeAndShapeInfo().GetShape().data());
-  // std::cout << "output_nbsizes:" << std::endl;
-  // print_tensor_dim1(output_node_names[4], nbsizes_arr, output_tensors[4].GetTensorTypeAndShapeInfo().GetShape().data());
-
-  // print_randomCoords("Random generated coords", input_coords_values.data(), input_coords_size/4, 4);  
-
-  save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape(), "output_feats");
+  // save_coords(coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data(), "output_coords.csv");
+  // save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data(), "output_feats.csv");
 
   return;
 }
-
-// #include <sys/mman.h>
 
 int main(int argc, char* argv[]) {
   setbuf(stdout, NULL);
@@ -479,7 +252,7 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  session_options.SetLogSeverityLevel(ORT_LOGGING_LEVEL_VERBOSE);
+  // session_options.SetLogSeverityLevel(ORT_LOGGING_LEVEL_VERBOSE);
 
   const char* model_path = cmd["model"].as<std::string>().c_str();
 
@@ -523,21 +296,6 @@ int main(int argc, char* argv[]) {
     printf("]\n");
   }
 
-  // if (num_input_nodes > 1) {
-  //   printf("ERROR: Graph has multiple input nodes defined.\n");
-  //   return -1;
-  // }
-
-  // Results should be...
-  // Number of inputs = 1
-  // Input 0 : name = data_0
-  // Input 0 : type = 1
-  // Input 0 : num_dims = 4
-  // Input 0 : dim 0 = 1
-  // Input 0 : dim 1 = 3
-  // Input 0 : dim 2 = 224
-  // Input 0 : dim 3 = 224
-
   size_t num_output_nodes = session.GetOutputCount();
   printf("Number of outputs = %zu\n", num_output_nodes);
   std::vector<const char*> output_node_names(num_output_nodes);
@@ -562,11 +320,6 @@ int main(int argc, char* argv[]) {
     }
     printf("]\n");
   }
-
-  // if (output_node_names.size() > 1) {
-  //   printf("ERROR: Graph has multiple output nodes defined. Please specify an output manually.\n");
-  //   return -1;
-  // }
 
   test_infer( cmd["preprocess"].as<std::string>(),
              session, input_node_names, input_node_shapes, input_node_sizes, output_node_names);

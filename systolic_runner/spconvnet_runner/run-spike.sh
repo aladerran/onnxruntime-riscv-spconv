@@ -1,10 +1,37 @@
 #!/bin/bash
 set -e
 
+# Change to the project directory
+cd ../..
+
+# Build the project in Release mode with parallel compilation
 ./build.sh --config=Release --parallel
 
+# Change back to the original directory
+cd -
+
+# Run tests and append output to log files
+# For each test, replace the placeholder with your ELF file path and other parameters
 {
-echo
-# Change the following line to your own ELF file
-spike --extension=gemmini pk ort_test -m unet_v2.onnx -p caffe2 -x 2 -O 0
-} >spike.log 2>&1
+  echo ===================== Runtime begins =====================
+  spike --extension=gemmini pk ort_test -m unet_v2.onnx -p caffe2 -x 2 -O 0
+  echo ===================== Runtime ends =====================
+} >> unet_WS_spike.log 2>&1
+
+{
+  echo ===================== Runtime begins =====================
+  spike --extension=gemmini pk ort_test -m resnet_v2.onnx -p caffe2 -x 2 -O 0
+  echo ===================== Runtime ends =====================
+} >> resnet_WS_spike.log 2>&1
+
+{
+  echo ===================== Runtime begins =====================
+  spike --extension=gemmini pk ort_test -m unet_v2.onnx -p caffe2 -x 0 -O 0
+  echo ===================== Runtime ends =====================
+} >> unet_CPU_spike.log 2>&1
+
+{
+  echo ===================== Runtime begins =====================
+  spike --extension=gemmini pk ort_test -m resnet_v2.onnx -p caffe2 -x 0 -O 0
+  echo ===================== Runtime ends =====================
+} >> resnet_CPU_spike.log 2>&1

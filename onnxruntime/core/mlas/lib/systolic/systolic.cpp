@@ -506,11 +506,14 @@ void convolution_forward_cpu(const float* in_feat,
                               neighbor_offset + kernel_volume);
     }
 
-    std::vector<float> in_buffer(in_buffer_size * in_channels, 0);
-    std::vector<float> out_buffer(in_buffer_size * out_channels, 0);
+    float* in_buffer = new float[in_buffer_size * in_channels]();
+    float* out_buffer = new float[in_buffer_size * out_channels]();
     int cur_offset = 0;
 
     for (int i = 0; i < kernel_volume; i++) {
+
+        std::fill(out_buffer, out_buffer + in_buffer_size * out_channels, 0);
+
         if (flag && (i == kernel_volume / 2)) {
             cur_offset += 2 * neighbor_offset[i];
             continue;
@@ -522,25 +525,28 @@ void convolution_forward_cpu(const float* in_feat,
 
         // Gather
         gather_cpu(neighbor_offset[i], in_nrows, in_channels,
-                   in_feat, in_buffer.data(),
+                   in_feat, in_buffer,
                    neighbor_map + cur_offset, transpose);
 
         // Matrix multiplication
         matmul_type_dispatch(tiled_matmul_type,
-                             in_buffer.data(),
+                             in_buffer,
                              kernel + i * in_channels * out_channels,
-                             out_buffer.data(),
+                             out_buffer,
                              neighbor_offset[i],
                              out_channels,
                              in_channels);
 
         // Scatter
         scatter_cpu(neighbor_offset[i], out_nrows, out_channels,
-                    out_buffer.data(),
+                    out_buffer,
                     out_feat,
                     neighbor_map + cur_offset, transpose);
         cur_offset += 2 * neighbor_offset[i];
     }
+
+    delete[] in_buffer;
+    delete[] out_buffer;
 }
 
 

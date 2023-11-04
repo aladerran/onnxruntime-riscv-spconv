@@ -1460,6 +1460,140 @@ activation and leaky_relu_alpha.)DOC")
         }
       });
 
+  ONNX_CONTRIB_OPERATOR_SCHEMA(FusedBatchNorm)
+      .SetDomain(kOnnxDomain)
+      .SinceVersion(1)
+      .SetDoc(R"DOC(
+The FusedBatchNorm operator schema is the same as BatchNorm besides it includes attributes
+activation.)DOC")
+      .Attr("epsilon", "", AttributeProto::FLOAT, 1e-5f)
+      .Attr("momentum", "", AttributeProto::FLOAT, 0.9f)
+      .Attr("training_mode", "", AttributeProto::INT, static_cast<int64_t>(0))
+      .Attr(
+          "activation",
+          "",
+          AttributeProto::STRING,
+          OPTIONAL_VALUE)
+      .Attr(
+          "activation_params",
+          "",
+          AttributeProto::FLOATS,
+          OPTIONAL_VALUE)
+      .Input(
+          0,
+          "X",
+          "",
+          "T",
+          OpSchema::Single,
+          true,
+          1,
+          OpSchema::Differentiable)
+      .Input(1, "scale", "", "T1", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(2, "B", "", "T1", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(
+          3,
+          "input_mean",
+          "running (training) or estimated (testing) mean tensor of shape (C).",
+          "T2",
+          OpSchema::Single,
+          true,
+          1,
+          OpSchema::Differentiable)
+      .Input(
+          4,
+          "input_var",
+          "running (training) or estimated (testing) variance tensor of shape (C).",
+          "T2",
+          OpSchema::Single,
+          true,
+          1,
+          OpSchema::Differentiable)
+      .Output(
+          0,
+          "Y",
+          "The output tensor of the same shape as X",
+          "T",
+          OpSchema::Single,
+          true,
+          1,
+          OpSchema::Differentiable)
+      .Output(
+          1,
+          "running_mean",
+          "The running mean after the BatchNormalization operator.",
+          "T2",
+          OpSchema::Optional,
+          true,
+          1,
+          OpSchema::NonDifferentiable)
+      .Output(
+          2,
+          "running_var",
+          "The running variance after the BatchNormalization operator. This op uses the population size (N) for "
+          "calculating variance, and not the sample size N-1.",
+          "T2",
+          OpSchema::Optional,
+          true,
+          1,
+          OpSchema::NonDifferentiable)
+      .TypeConstraint(
+          "T",
+          {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"},
+          "Constrain input and output types to float tensors.")
+      .TypeConstraint(
+          "T1",
+          {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"},
+          "Constrain scale and bias types to float tensors.")
+      .TypeConstraint(
+          "T2",
+          {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"},
+          "Constrain mean and variance types to float tensors.") 
+      .TypeAndShapeInferenceFunction([](InferenceContext& ctx) {
+          propagateShapeAndTypeFromFirstInput(ctx);
+          propagateShapeFromInputToOutput(ctx, 0, 0);
+
+          // Inputs 1 to 4 must be of rank 1.
+          checkInputRank(ctx, 1, 1);
+          checkInputRank(ctx, 2, 1);
+          checkInputRank(ctx, 3, 1);
+          checkInputRank(ctx, 4, 1);
+
+          Dim num_channels;
+
+          if (hasInputShape(ctx, 0)) {
+            if (getInputShape(ctx, 0).dim_size() > 1)
+              unifyInputDim(ctx, 0, 1, num_channels);
+            else
+              unifyDim(num_channels, 1);
+          }
+
+          unifyInputDim(ctx, 1, 0, num_channels);
+          unifyInputDim(ctx, 2, 0, num_channels);
+          unifyInputDim(ctx, 3, 0, num_channels);
+          unifyInputDim(ctx, 4, 0, num_channels);
+
+          if (ctx.getAttribute("training_mode") && static_cast<int>(ctx.getAttribute("training_mode")->i()) != 0) {
+            if (ctx.getNumOutputs() != 3)
+              fail_shape_inference("This number of op outputs should be 3 when Training_mode = True, but it is not.");
+          } else {
+            if (ctx.getNumOutputs() != 1)
+              fail_shape_inference("This number of op outputs should be 1 when Training_mode = False, but it is not.");
+          }
+
+          if (ctx.getNumOutputs() > 1) {
+            TensorShapeProto outputs_shape;
+            *outputs_shape.add_dim() = num_channels; // channel
+
+            propagateElemTypeFromInputToOutput(ctx, 3, 1);
+            updateOutputShape(ctx, 1, outputs_shape);
+
+            if (ctx.getNumOutputs() > 2) {
+              propagateElemTypeFromInputToOutput(ctx, 4, 2);
+              updateOutputShape(ctx, 2, outputs_shape);
+            }
+          }
+      });
+
   ONNX_CONTRIB_OPERATOR_SCHEMA(ExpandDims)
       .SetDomain(kMSDomain)
       .SinceVersion(1)

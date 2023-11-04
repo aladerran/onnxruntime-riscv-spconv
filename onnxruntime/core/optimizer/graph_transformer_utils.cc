@@ -49,6 +49,8 @@
 #include "core/optimizer/matmul_transpose_fusion.h"
 #include "core/optimizer/bias_dropout_fusion.h"
 
+#include "core/optimizer/batchnorm_relu_fusion.h"
+
 namespace onnxruntime {
 class IExecutionProvider;
 
@@ -204,6 +206,10 @@ std::vector<std::unique_ptr<GraphTransformer>> GenerateTransformers(
       if (enable_gelu_approximation) {
         transformers.emplace_back(std::make_unique<GeluApproximation>(cpu_cuda_rocm_eps));
       }
+
+      //zxr
+      transformers.emplace_back(std::make_unique<BatchnormReluFusion>(cpu_ep));
+
 
 #endif
     } break;

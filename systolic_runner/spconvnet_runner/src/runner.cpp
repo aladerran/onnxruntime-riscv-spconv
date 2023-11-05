@@ -73,6 +73,27 @@ void save_feats(float* data, const int64_t* shape, const char* filename) {
     outFile.close();
 }
 
+void save_feats_b(const float* data, const int64_t* shape, const std::string& filename) {
+    std::ofstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
+    // if(shape.size()!=2){
+    //   std::cerr << "invalid feats shape! get dims:" << shape.size() << std::endl;
+    // }
+
+    // 将 shape 写入文件
+    int64_t rows = shape[0];
+    int64_t cols = shape[1];
+    file.write(reinterpret_cast<const char*>(&rows), sizeof(int64_t));
+    file.write(reinterpret_cast<const char*>(&cols), sizeof(int64_t));
+
+    // 将数据写入文件
+    file.write(reinterpret_cast<const char*>(data), rows * cols * sizeof(float));
+
+    file.close();
+}
 
 bool has_suffix(const std::string& str, const std::string& suffix) {
   return str.size() >= suffix.size() &&
@@ -193,8 +214,8 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   // int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
   // int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
 
-  // save_coords(coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data(), "output_coords.csv");
-  // save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data(), "output_feats.csv");
+  save_coords(coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data(), "output_coords.csv");
+  save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data(), "output_feats.csv");
 
   return;
 }

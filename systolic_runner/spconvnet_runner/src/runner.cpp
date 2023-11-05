@@ -207,8 +207,8 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
 
   // print outputs
 
-  int32_t* coords_arr = output_tensors[0].GetTensorMutableData<int32_t>();
-  float* feats_arr = output_tensors[1].GetTensorMutableData<float>();
+  // int32_t* coords_arr = output_tensors[0].GetTensorMutableData<int32_t>();
+  // float* feats_arr = output_tensors[1].GetTensorMutableData<float>();
   // int32_t* strides_arr = output_tensors[2].GetTensorMutableData<int32_t>();
   // int32_t* nbmaps_arr = output_tensors[3].GetTensorMutableData<int32_t>();
   // int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();

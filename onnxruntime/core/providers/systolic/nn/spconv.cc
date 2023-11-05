@@ -8,12 +8,8 @@
 #include "core/framework/op_kernel_context_internal.h"
 #include "core/common/safeint.h"
 #include "conv_pool_helper.h"
-<<<<<<< HEAD
-#include <algorithm> 
-=======
 #include <algorithm> // std::sort needs this
 #include <cstdint>
->>>>>>> zxr
 
 #ifdef SYSTOLIC_FP32
 

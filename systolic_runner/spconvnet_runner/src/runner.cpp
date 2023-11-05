@@ -214,7 +214,7 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   // int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
   // int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
 
-  // save_coords(coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data(), "output_coords.csv");
+  save_coords(coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data(), "output_coords.csv");
   save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data(), "output_feats.csv");
 
   return;

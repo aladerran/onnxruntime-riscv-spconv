@@ -1,0 +1,1393 @@
+===================== Runtime begins =====================
+Gemmini extension configured with:
+    dim = 8
+bbl loader
+Loaded runner program
+Using systolic in mode 2
+Using Onnxruntime C++ API
+Create session
+Number of inputs = 3
+Input 0 : name=inputCoords, type=6, element count: 397640
+num_dims=3: [99410, 4, ]
+Input 1 : name=inputFeats, type=1, element count: 397640
+num_dims=3: [99410, 4, ]
+Input 2 : name=inputStride, type=6, element count: 3
+num_dims=3: [3, ]
+Number of outputs = 6
+Output 0 : name=outputCoords, type=6, num_dims=2: [-1, 4, ]
+Output 1 : name=outputFeats, type=1, num_dims=2: [-1, 96, ]
+Output 2 : name=outputStride, type=6, num_dims=1: [3, ]
+Output 3 : name=nbmaps, type=6, num_dims=2: [-1, 2, ]
+Output 4 : name=nbsizes, type=6, num_dims=1: [27, ]
+Output 5 : name=698, type=6, num_dims=1: [2, ]
+Processing function test_infer
+Read test data
+Create Tensors
+Start Running
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/stem/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/stem/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.0/convblock/conv3d/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.0/resblock1/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.0/resblock1/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.0/resblock2/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.0/resblock2/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.1/convblock/conv3d/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.1/resblock1/shortcut/conv3d/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.1/resblock1/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.1/resblock1/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.1/resblock2/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.1/resblock2/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.2/convblock/conv3d/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.2/resblock1/shortcut/conv3d/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.2/resblock1/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.2/resblock1/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.2/resblock2/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.2/resblock2/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.3/convblock/conv3d/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.3/resblock1/shortcut/conv3d/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.3/resblock1/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.3/resblock1/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.3/resblock2/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/encoders.3/resblock2/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/upsample/conv3d/SpConv3d
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/shortcut/conv3d/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock2/main/conv3d1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock2/main/conv3d2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/upsample/conv3d_1/SpConv3d
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/shortcut/conv3d_1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/main/conv3d1_1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/main/conv3d2_1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock2/main/conv3d1_1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock2/main/conv3d2_1/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/upsample/conv3d_2/SpConv3d
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/shortcut/conv3d_2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/main/conv3d1_2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/main/conv3d2_2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock2/main/conv3d1_2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock2/main/conv3d2_2/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/upsample/conv3d_3/SpConv3d
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/shortcut/conv3d_3/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/main/conv3d1_3/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock1/main/conv3d2_3/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock2/main/conv3d1_3/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+debug-zxr: start spconv3d computing
+debug-zxr:domain: /type:SpConv3d /name:/fuse/resblock2/main/conv3d2_3/SpConv3d
+debug-zxr: start buildkmap
+debug-zxr: parse nbsizes
+debug-zxr: parse nbmaps
+debug-zxr: end buildkmap
+debug-zxr: start convolution_forward_cpu
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+Using Gemmini WS Matmul!
+debug-zxr: end convolution_forward_cpu
+Done! Inference took 39643295425 cycles 
+===================== Runtime ends =====================

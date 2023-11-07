@@ -13,6 +13,9 @@ cd -
 ./build.sh --config=Release --parallel
 
 
+cp -r data/10k/* .
+
+
 # Run tests and append output to log files
 # For each test, replace the placeholder with your ELF file path and other parameters
 {
@@ -27,14 +30,17 @@ cd -
   echo ===================== Runtime ends =====================
 } >> resnet_WS_spike.log 2>&1
 
-{
-  echo ===================== Runtime begins =====================
-  spike --extension=gemmini pk ort_test -m unet_v2.onnx -p caffe2 -x 0 -O 99
-  echo ===================== Runtime ends =====================
-} >> unet_CPU_spike.log 2>&1
+# {
+#   echo ===================== Runtime begins =====================
+#   spike --extension=gemmini pk ort_test -m unet_v2.onnx -p caffe2 -x 0 -O 99
+#   echo ===================== Runtime ends =====================
+# } >> unet_CPU_spike.log 2>&1
 
-{
-  echo ===================== Runtime begins =====================
-  spike --extension=gemmini pk ort_test -m resnet_v2.onnx -p caffe2 -x 0 -O 99
-  echo ===================== Runtime ends =====================
-} >> resnet_CPU_spike.log 2>&1W
+# {
+#   echo ===================== Runtime begins =====================
+#   spike --extension=gemmini pk ort_test -m resnet_v2.onnx -p caffe2 -x 0 -O 99
+#   echo ===================== Runtime ends =====================
+# } >> resnet_CPU_spike.log 2>&1
+
+mv *.log result/32x32/10k/
+rm -f *.csv *.onnx

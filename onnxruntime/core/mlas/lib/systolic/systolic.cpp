@@ -374,7 +374,16 @@ void cleargemmini() {
 }
 #endif
 
+unsigned long long read_cycles()
+{
+    unsigned long long cycles;
+    asm volatile ("rdcycle %0" : "=r" (cycles));
+    return cycles;
+}
 
+unsigned long long scatter_cycles;
+unsigned long long matmul_cycles;
+unsigned long long gather_cycles;
 
 // systolic sparse backend
 
@@ -410,12 +419,15 @@ void gemmini_matmul(const float *A, const float *B, float *C, int M, int N, int 
 void matmul_type_dispatch(tiled_matmul_type_t tiled_matmul_type, 
                           const float* A, const float* B, float* C, 
                           int M, int N, int K) {
+
+    auto matmul_start = read_cycles();
+    
     switch (tiled_matmul_type) {
         case CPU:
             slow_matmul(A, B, C, M, N, K);
             break;
         case OS:
-            std::cout << "Using Gemmini OS Matmul！" << std::endl;
+            std::cout << "Using Gemmini OS Matmul!" << std::endl;
             gemmini_matmul(A, B, C, M, N, K, OS);
             break;
         case WS:
@@ -425,6 +437,11 @@ void matmul_type_dispatch(tiled_matmul_type_t tiled_matmul_type,
         default:
             throw std::invalid_argument("Invalid matmul type");
     }
+
+    auto matmul_end = read_cycles();
+
+    matmul_cycles += matmul_end -matmul_start;
+
 }
 
 
@@ -432,6 +449,9 @@ void matmul_type_dispatch(tiled_matmul_type_t tiled_matmul_type,
 void scatter_cpu(const int n_in, const int n_out, const int c,
                  const float *in_feat, float *out_feat, const int *kmap,
                  const bool transpose) {
+
+    auto scatter_start = read_cycles();
+
     for (int i = 0; i < n_in; i++) {
         int out_pos = kmap[2 * i + 1 - transpose];
         if (out_pos < 0) {
@@ -441,11 +461,19 @@ void scatter_cpu(const int n_in, const int n_out, const int c,
             out_feat[out_pos * c + j] += in_feat[i * c + j];
         }
     }
+
+    auto scatter_end = read_cycles();
+
+    scatter_cycles += scatter_end - scatter_start;
+
 }
 
 void gather_cpu(const int n_k, const int n_in, const int c,
                 const float *in_feat, float *out_feat, const int *kmap,
                 const bool transpose) {
+
+    auto gather_start = read_cycles();
+
     for (int i = 0; i < n_k; i++) {
         int in_pos = kmap[2 * i + transpose];
         if (in_pos < 0) {
@@ -455,6 +483,11 @@ void gather_cpu(const int n_k, const int n_in, const int c,
             out_feat[i * c + j] = in_feat[in_pos * c + j];
         }
     }
+
+    auto gather_end = read_cycles();
+
+    gather_cycles += gather_end - gather_start;
+
 }
 
 
@@ -609,6 +642,22 @@ void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
             out[idx] = iter->second;
         }
     }
+}
+
+void print_cycles() {
+
+    auto total_cycles = scatter_cycles + matmul_cycles + gather_cycles;
+    auto matmul_percentage = (float)matmul_cycles / total_cycles;
+    auto scatter_percentage = (float)scatter_cycles / total_cycles;
+    auto gather_percentage = (float)gather_cycles / total_cycles;
+
+    std::cout << "Scatter cycles: " << scatter_cycles << std::endl;
+    std::cout << "Scatter takes " << scatter_percentage * 100 << "% of total cycles" << std::endl;
+    std::cout << "Matmul cycles: " << matmul_cycles << std::endl;
+    std::cout << "Matmul takes " << matmul_percentage * 100 << "% of total cycles" << std::endl;
+    std::cout << "Gather cycles: " << gather_cycles << std::endl;
+    std::cout << "Gather takes " << gather_percentage * 100 << "% of total cycles" << std::endl;
+    std::cout << "Convolution Forward cycles in total: " << total_cycles << std::endl;
 }
 
 #pragma GCC diagnostic pop

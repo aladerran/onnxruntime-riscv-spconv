@@ -119,7 +119,7 @@ void read_inputs_coords_feats(const std::string& coords_path, const std::string&
   ff.close();
 }
 
-unsigned long long read_cycles() {
+unsigned long long read_cycle() {
   unsigned long long cycles;
   asm volatile("rdcycle %0" : "=r"(cycles));
   return cycles;
@@ -169,13 +169,13 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
   input_tensors.push_back(std::move(input_feats_tensor));
   input_tensors.push_back(std::move(input_strides_tensor));
 
-  auto pre_inference_cycles = read_cycles();
+  auto pre_inference_cycles = read_cycle();
 
   // score model & input tensor, get back output tensor
   std::cout << "Start Running" << std::endl;
   std::vector<Ort::Value> output_tensors = session.Run(Ort::RunOptions{nullptr}, input_node_names.data(),
                                                        input_tensors.data(), num_inputs, output_node_names.data(), num_outputs);
-  auto post_inference_cycles = read_cycles();
+  auto post_inference_cycles = read_cycle();
 
   assert(output_tensors.size() == num_outputs);
   for (size_t i = 0; i < num_outputs; i++) {

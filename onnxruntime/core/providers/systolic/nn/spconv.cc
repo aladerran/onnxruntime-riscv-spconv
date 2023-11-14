@@ -389,6 +389,7 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &Output
                           static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), 
                           static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());                   
   std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
+  print_cycles();
   return Status::OK();
 }
 

@@ -135,5 +135,8 @@ MLASCALL(const int *idx, const int *kernel_offset,
 void hash_query_cpu
 MLASCALL(const int64_t* hash_query, const int64_t* hash_target,
           const int64_t* idx_target, int64_t* out, const int n, const int n1);
+
+void print_cycles
+MLASCALL();
                             
 #endif

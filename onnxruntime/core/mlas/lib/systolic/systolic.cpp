@@ -16,6 +16,7 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-function"
 #include "systolic_include.h"
+#include "omp.h"
 
 /**
  * Perform a matmul and subsequent quantization.
@@ -384,6 +385,9 @@ unsigned long long read_cycles()
 unsigned long long scatter_cycles;
 unsigned long long matmul_cycles;
 unsigned long long gather_cycles;
+unsigned long long total_cycles;
+unsigned long long hash_cycles;
+unsigned long long hash_kernel_cycles;
 
 // systolic sparse backend
 
@@ -457,6 +461,7 @@ void scatter_cpu(const int n_in, const int n_out, const int c,
         if (out_pos < 0) {
             continue;
         }
+        #pragma omp parallel for
         for (int j = 0; j < c; j++) {
             out_feat[out_pos * c + j] += in_feat[i * c + j];
         }
@@ -479,6 +484,7 @@ void gather_cpu(const int n_k, const int n_in, const int c,
         if (in_pos < 0) {
             continue;
         }
+        #pragma omp parallel for
         for (int j = 0; j < c; j++) {
             out_feat[i * c + j] = in_feat[in_pos * c + j];
         }
@@ -503,6 +509,8 @@ void convolution_forward_cpu(const float* in_feat,
                              const int out_nrows,
                              const int kernel_volume,
                              char accelerator_mode) {
+
+    auto total_cycles_start = read_cycles();
 
     tiled_matmul_type_t tiled_matmul_type = get_accelerator_mode(accelerator_mode);
 
@@ -539,13 +547,11 @@ void convolution_forward_cpu(const float* in_feat,
                               neighbor_offset + kernel_volume);
     }
 
-    float* in_buffer = new float[in_buffer_size * in_channels]();
-    float* out_buffer = new float[in_buffer_size * out_channels]();
+    std::vector<float> in_buffer(in_buffer_size * in_channels, 0);
+    std::vector<float> out_buffer(in_buffer_size * out_channels, 0);
     int cur_offset = 0;
 
     for (int i = 0; i < kernel_volume; i++) {
-
-        std::fill(out_buffer, out_buffer + in_buffer_size * out_channels, 0);
 
         if (flag && (i == kernel_volume / 2)) {
             cur_offset += 2 * neighbor_offset[i];
@@ -558,32 +564,33 @@ void convolution_forward_cpu(const float* in_feat,
 
         // Gather
         gather_cpu(neighbor_offset[i], in_nrows, in_channels,
-                   in_feat, in_buffer,
+                   in_feat, in_buffer.data(),
                    neighbor_map + cur_offset, transpose);
 
         // Matrix multiplication
         matmul_type_dispatch(tiled_matmul_type,
-                             in_buffer,
+                             in_buffer.data(),
                              kernel + i * in_channels * out_channels,
-                             out_buffer,
+                             out_buffer.data(),
                              neighbor_offset[i],
                              out_channels,
                              in_channels);
 
         // Scatter
         scatter_cpu(neighbor_offset[i], out_nrows, out_channels,
-                    out_buffer,
+                    out_buffer.data(),
                     out_feat,
                     neighbor_map + cur_offset, transpose);
         cur_offset += 2 * neighbor_offset[i];
     }
 
-    delete[] in_buffer;
-    delete[] out_buffer;
+    auto total_cycles_end = read_cycles();
+    total_cycles = total_cycles_end - total_cycles_start;
 }
 
 
 void cpu_hash_wrapper(const int N, const int *data, int64_t *out) {
+#pragma omp parallel for
     for (int i = 0; i < N; i++) {
         uint64_t hash = 14695981039346656037UL;
         for (int j = 0; j < 4; j++) {
@@ -598,6 +605,7 @@ void cpu_hash_wrapper(const int N, const int *data, int64_t *out) {
 void cpu_kernel_hash_wrapper(const int N, const int K, const int *data,
                              const int *kernel_offset, int64_t *out) {
     for (int k = 0; k < K; k++) {
+#pragma omp parallel for
         for (int i = 0; i < N; i++) {
             int cur_coord[4];
             for (int j = 0; j < 3; j++) {
@@ -616,12 +624,18 @@ void cpu_kernel_hash_wrapper(const int N, const int K, const int *data,
 }
 
 void hash_cpu(const int *idx, int64_t *out, const int N) {
+    auto hash_start = read_cycles();
     cpu_hash_wrapper(N, idx, out);
+    auto hash_end = read_cycles();
+    hash_cycles += hash_end - hash_start;
 }
 
 void kernel_hash_cpu(const int *idx, const int *kernel_offset,
                      int64_t *out, const int N, const int K) {
+    auto hash_start = read_cycles();
     cpu_kernel_hash_wrapper(N, K, idx, kernel_offset, out);
+    auto hash_end = read_cycles();
+    hash_kernel_cycles += hash_end - hash_start;
 }
 
 void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
@@ -634,7 +648,7 @@ void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
         int64_t val = idx_target[idx] + 1;
         hashmap.insert(std::make_pair(key, val));
     }
-
+#pragma omp parallel for
     for (int idx = 0; idx < n1; idx++) {
         int64_t key = hash_query[idx];
         google::dense_hash_map<int64_t, int64_t>::iterator iter = hashmap.find(key);
@@ -646,10 +660,11 @@ void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
 
 void print_cycles() {
 
-    auto total_cycles = scatter_cycles + matmul_cycles + gather_cycles;
     auto matmul_percentage = (float)matmul_cycles / total_cycles;
     auto scatter_percentage = (float)scatter_cycles / total_cycles;
     auto gather_percentage = (float)gather_cycles / total_cycles;
+
+
 
     std::cout << "Scatter cycles: " << scatter_cycles << std::endl;
     std::cout << "Scatter takes " << scatter_percentage * 100 << "% of total cycles" << std::endl;
@@ -658,6 +673,9 @@ void print_cycles() {
     std::cout << "Gather cycles: " << gather_cycles << std::endl;
     std::cout << "Gather takes " << gather_percentage * 100 << "% of total cycles" << std::endl;
     std::cout << "Convolution Forward cycles in total: " << total_cycles << std::endl;
+
+    std::cout << "Hash cycles: " << hash_cycles << std::endl;
+    std::cout << "Hash kernel cycles: " << hash_kernel_cycles << std::endl;
 }
 
 #pragma GCC diagnostic pop

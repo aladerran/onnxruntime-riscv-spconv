@@ -10,6 +10,7 @@
 #include "conv_pool_helper.h"
 #include <algorithm> // std::sort needs this
 #include <cstdint>
+#include "omp.h"
 
 #ifdef SYSTOLIC_FP32
 
@@ -194,6 +195,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   int32_t kernel_volume = static_cast<int32_t>(kernel_shape[0] * kernel_shape[1] * kernel_shape[2]);
   std::vector<int32_t> offsets(kernel_volume * 3);
   if(kernel_volume % 2 == 1){
+    #pragma omp parallel for collapse(3)
     for (size_t i = 0; i < kernel_shape[2]; i++) {
       for (size_t j = 0; j < kernel_shape[1]; j++) {
         for (size_t k = 0; k < kernel_shape[0]; k++) {
@@ -204,6 +206,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       }
     }
   } else {
+    #pragma omp parallel for collapse(3)
     for (size_t i = 0; i < kernel_shape[0]; i++) {
       for (size_t j = 0; j < kernel_shape[1]; j++) {
         for (size_t k = 0; k < kernel_shape[2]; k++) {
@@ -236,6 +239,8 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       }
 
       output_coords_vector_uncoalesced.resize(input_coords_shape[0], std::vector<int32_t>(4));
+
+      #pragma omp parallel for
       for (size_t i = 0; i < input_coords_shape[0]; i++) {
         output_coords_vector_uncoalesced[i][0] = input_coords_data[ i * 4 ] / sample_stride[0] * sample_stride[0];
         output_coords_vector_uncoalesced[i][1] = input_coords_data[ i * 4 + 1 ] / sample_stride[1] * sample_stride[1];
@@ -250,6 +255,8 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       }
       int32_t min[3] = {INT32_MAX, INT32_MAX, INT32_MAX};
       int32_t max[3] = {INT32_MIN, INT32_MIN, INT32_MIN};
+
+      #pragma omp parallel for
       for(size_t i = 0; i < input_coords_shape[0]; i++) {
         min[0] = min[0] <= input_coords_data[i * 4] ? min[0] : input_coords_data[i * 4];
         max[0] = max[0] >= input_coords_data[i * 4] ? max[0] : input_coords_data[i * 4];
@@ -257,7 +264,6 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
         max[1] = max[1] >= input_coords_data[i * 4 + 1] ? max[1] : input_coords_data[i * 4 + 1];
         min[2] = min[2] <= input_coords_data[i * 4 + 2] ? min[2] : input_coords_data[i * 4 + 2];
         max[2] = max[2] >= input_coords_data[i * 4 + 2] ? max[2] : input_coords_data[i * 4 + 2];
-
       }
 
       int uncoalesced_size = input_coords_shape[0] * ( kernel_shape[0] / strides[0] + 1) * \
@@ -266,6 +272,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       output_coords_vector_uncoalesced.resize(uncoalesced_size, std::vector<int32_t>(4));
       // output_coords_vector_uncoalesced.reserve(uncoalesced_size);
       count = 0;
+      #pragma omp parallel for
       for(size_t i = 0; i < input_coords_shape[0]; i++) {
         for(size_t j = 0; j < kernel_volume; j++) {
           int coord[4];
@@ -295,6 +302,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     std::vector<int64_t> output_coords_shape({num_output_coords, 4});
     OutputCoords = context->Output(0, output_coords_shape);
     output_coords_data = OutputCoords -> template MutableData<int32_t>();
+    #pragma omp parallel for
     for (size_t i = 0; i < num_output_coords; ++i){
       output_coords_data[i * 4] = output_coords_vector_uncoalesced[i][0];
       output_coords_data[i * 4 + 1] = output_coords_vector_uncoalesced[i][1];
@@ -324,6 +332,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   Nbsizes = context->Output(4, nbsizes_shape);
   std::cout << "debug-zxr: parse nbsizes" << std::endl;
   int* nbsizes_data = Nbsizes->template MutableData<int32_t>();
+  #pragma omp parallel for
   for (size_t i = 0; i < kernel_volume; i++){
     size_t sum = 0;
     for(size_t j = 0; j < num_output_coords; j++){
@@ -347,6 +356,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   //parse nbmaps
   std::cout << "debug-zxr: parse nbmaps" << std::endl;
   int64_t sum_nbmaps = 0;
+  #pragma omp parallel for
   for(size_t i = 0; i < kernel_volume; i++){
     sum_nbmaps += nbsizes_data[i];
   }
@@ -354,6 +364,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   Nbmaps = context->Output(3, nbmaps_shape);
   int* nbmaps_data = Nbmaps->template MutableData<int32_t>();
   count = 0;
+  #pragma omp parallel for
   for (size_t i = 0; i < kernel_volume; i++){
     for(size_t j = 0; j < num_output_coords; j++){
       if(results[i * num_output_coords + j] != 0) {

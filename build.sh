@@ -10,7 +10,7 @@ OS=$(uname -s)
 # By default, we assume we are building for systolic only, so riscv-tools suffices with standard target
 export CXX=riscv64-unknown-linux-gnu-g++
 export CC=riscv64-unknown-linux-gnu-gcc
-export CXXFLAGS="-march=rv64imafdc -mabi=lp64d"
+export CXXFLAGS="-march=rv64imafdc -mabi=lp64d -fopenmp"
 
 BUILD_TYPE="Debug"
 for var in "$@"

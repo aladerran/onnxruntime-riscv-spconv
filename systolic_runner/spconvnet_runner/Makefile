@@ -1,7 +1,8 @@
 CXX = riscv64-unknown-linux-gnu-g++
 CFLAGS = -march=rv64imafdc -mabi=lp64d -Wno-error=attributes \
    	-Wall -Wextra -ffunction-sections -fdata-sections -Wno-parentheses -g -Wno-nonnull-compare \
-  	-latomic -static
+  	-latomic -static \
+	-fopenmp
 CDEFS = -Dgsl_CONFIG_CONTRACT_VIOLATION_THROWS ${extra_defs}
 
 stb_image.o:

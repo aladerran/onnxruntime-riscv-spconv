@@ -585,7 +585,7 @@ void convolution_forward_cpu(const float* in_feat,
     }
 
     auto total_cycles_end = read_cycles();
-    total_cycles = total_cycles_end - total_cycles_start;
+    total_cycles += total_cycles_end - total_cycles_start;
 }
 
 

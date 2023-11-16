@@ -166,9 +166,19 @@ bool cmp(std::vector<int32_t> &a, std::vector<int32_t> &b) {
   }
 }
 
+unsigned long long readCycles()
+{
+    unsigned long long cycles;
+    asm volatile ("rdcycle %0" : "=r" (cycles));
+    return cycles;
+}
+
+auto map_cycles = 0;
+
 template <typename T>
 Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoords, const Tensor* InputStrides, 
                               Tensor* &OutputCoords, Tensor* &Nbmaps, Tensor* &Nbsizes) const {
+  auto map_start = readCycles();
   std::vector<int64_t> kernel_shape = conv_attrs_.kernel_shape_;
   std::vector<int64_t> dilations(conv_attrs_.dilations);
   if (dilations.empty()) {
@@ -378,6 +388,8 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   // for (size_t i = 0; i < sum_nbmaps; i++){
   //   std::cout << nbmaps_data[i * 2] << " " << nbmaps_data[i * 2 + 1] << std::endl;
   // }
+  auto map_end = readCycles();
+  map_cycles += map_end - map_start;
   std::cout << "debug-zxr: end buildkmap" << std::endl;
   return Status::OK();
 }
@@ -401,6 +413,7 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &Output
                           static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());                   
   std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
   print_cycles();
+  std::cout << "Map cycles: " << map_cycles << std::endl;
   return Status::OK();
 }
 

@@ -104,31 +104,58 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   const int* input_strides_data = InputStrides->template Data<int32_t>();
   const float* weight_data = Weight->template Data<float>();
 
-  if ( !transposed ){
-    std::cout << "debug-zxr: start buildkmap" << std::endl;
-    ORT_RETURN_IF_ERROR(BuildKmap(context, InputCoords, InputStrides, OutputCoords, Nbmaps_o, Nbsizes_o));
-    int32_t* sizes_io_data = SizesIO_o -> MutableData<int32_t>();
-    sizes_io_data[0] = static_cast<int32_t>(InputCoords->Shape()[0]);
-    sizes_io_data[1] = static_cast<int32_t>(OutputCoords->Shape()[0]);
+  if( conv_attrs_.kernel_shape_[0] == 1 && conv_attrs_.kernel_shape_[1] == 1 && conv_attrs_.kernel_shape_[2] == 1 
+      && conv_attrs_.strides[0] == 1 && conv_attrs_.strides[1] == 1 && conv_attrs_.strides[2] == 1 
+      && conv_attrs_.dilations[0] == 1 && conv_attrs_.dilations[1] == 1 && conv_attrs_.dilations[2] == 1){
+    OutputCoords = context->Output(0, InputCoords->Shape());
+    // std::vector<int64_t> nb_shape({1, 2});
+    // Nbmaps_o = context->Output(3, nb_shape);
+    // std::cout << "@22" << std::endl;
+    // Nbsizes_o = context->Output(4, nb_shape);
+    ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(InputCoords, OutputCoords));
+    ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(InputStrides, OutputStrides));
     std::vector<int64_t> output_feats_shape({OutputCoords->Shape()[0], Weight->Shape()[2]});
     OutputFeats = context->Output(1, output_feats_shape);
+    SystolicMultiply(static_cast<const SystolicExecutionProvider*>(
+                      this->Info().GetExecutionProvider())->GetAcceleratorMode(),
+                    /* relu= */ false,
+                    static_cast<int>(InputCoords->Shape()[0]),
+                    static_cast<int>(Weight->Shape()[2]),
+                    static_cast<int>(Weight->Shape()[1]),
+                    input_feats_data,
+                    weight_data,
+                    OutputFeats -> template MutableData<float>(),
+                    /*real_multiplier=*/ 1, /* bias= */nullptr);
 
-
-    // if(printflag){
-    //   std::cout << "printflag on, print nbmaps" << std::endl;
-    //   int rows = static_cast<int32_t>(InputCoords->Shape()[0]);
-    //   const int32_t* nbmaps_data = Nbmaps_o->template Data<int32_t>();
-    //   for (int i = 0; i < Nbmaps_o->Shape()[0]; i++){
-    //     int p = nbmaps_data[i*2];
-    //     int q = nbmaps_data[i*2+1];
-    //     if(p<0 || q <0 || p>rows || q>rows){
-    //       std::cout << "i:" << i << " | " << p << "," << q << std::endl;
-    //     }
-    //   }
-    // }
-
+  }
+  else if ( !transposed ){
+    if ( Nbmaps_i != nullptr && Nbsizes_i != nullptr && OutputCoords_i != nullptr){
+      OutputCoords = context->Output(0, OutputCoords_i->Shape());
+      Nbmaps_o = context->Output(3, Nbmaps_i->Shape());
+      Nbsizes_o = context->Output(4, Nbsizes_i->Shape());
+      ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(OutputCoords_i, OutputCoords));
+      ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbmaps_i, Nbmaps_o));
+      ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
+      // ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
+    } else if ( Nbmaps_i != nullptr && Nbsizes_i != nullptr && OutputCoords_i == nullptr ) {
+      OutputCoords = context->Output(0, InputCoords->Shape());
+      Nbmaps_o = context->Output(3, Nbmaps_i->Shape());
+      Nbsizes_o = context->Output(4, Nbsizes_i->Shape());
+      ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(InputCoords, OutputCoords));
+      ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbmaps_i, Nbmaps_o));
+      ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
+      // ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
+    } else {
+      std::cout << "debug-zxr: start buildkmap" << std::endl;
+      ORT_RETURN_IF_ERROR(BuildKmap(context, InputCoords, InputStrides, OutputCoords, Nbmaps_o, Nbsizes_o));
+      int32_t* sizes_io_data = SizesIO_o -> MutableData<int32_t>();
+      sizes_io_data[0] = static_cast<int32_t>(InputCoords->Shape()[0]);
+      sizes_io_data[1] = static_cast<int32_t>(OutputCoords->Shape()[0]);
+    }
+    std::vector<int64_t> output_feats_shape({OutputCoords->Shape()[0], Weight->Shape()[2]});
+    OutputFeats = context->Output(1, output_feats_shape);
     ORT_RETURN_IF_ERROR(ConvolutionForward(InputFeats, OutputFeats, Weight, Nbmaps_o, Nbsizes_o));
-    int* output_strides_data = OutputStrides-> template MutableData<int32_t>();
+    int32_t* output_strides_data = OutputStrides-> template MutableData<int32_t>();
     for (size_t i = 0; i < 3; i++){
       output_strides_data[i] = input_strides_data[i] * strides[i];
     }
@@ -139,7 +166,7 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(OutputCoords_i, OutputCoords));
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbmaps_i, Nbmaps_o));
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
-    ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
+    // ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
 
     std::vector<int64_t> output_feats_shape({OutputCoords->Shape()[0], Weight->Shape()[2]});
     OutputFeats = context->Output(1, output_feats_shape);

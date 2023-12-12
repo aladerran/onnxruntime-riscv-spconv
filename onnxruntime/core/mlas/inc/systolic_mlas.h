@@ -138,5 +138,8 @@ MLASCALL(const int64_t* hash_query, const int64_t* hash_target,
 
 void print_cycles
 MLASCALL();
+
+unsigned long long read_cycles
+MLASCALL();
                             
 #endif

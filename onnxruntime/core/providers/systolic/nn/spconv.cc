@@ -12,7 +12,7 @@
 #include <cstdint>
 #include "omp.h"
 
-#ifdef SYSTOLIC_FP32
+// #ifdef SYSTOLIC_FP32
 
 namespace onnxruntime {
 namespace systolic {
@@ -56,9 +56,16 @@ void write_csv(const int* data, const TensorShape& shape, const std::string& fil
     file.close();
 }
 
+unsigned long long map_cycles;
+unsigned long long io_cycles;
+unsigned long long conv_cycles;
+unsigned long long total_cycles;
 
 template <typename T>
 Status SpConv3d<T>::Compute(OpKernelContext* context) const {
+
+  auto total_start = read_cycles();
+
   const Tensor* InputCoords = context->Input<Tensor>(0);
   const Tensor* InputFeats = context->Input<Tensor>(1);
   const Tensor* InputStrides = context->Input<Tensor>(2);
@@ -151,6 +158,14 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     }
   }
 
+  unsigned long long total_end = read_cycles();
+  total_cycles += total_end - total_start;
+  print_cycles();
+  std::cout << "Convolution cycles: " << conv_cycles << std::endl;
+  std::cout << "Map processing cycles: " << map_cycles << std::endl;
+  std::cout << "IO propagation cycles: " << io_cycles << std::endl;
+  std::cout << "SpConv3D total cycles: " << total_cycles << std::endl;
+
   return Status::OK();
 }
 
@@ -166,19 +181,11 @@ bool cmp(std::vector<int32_t> &a, std::vector<int32_t> &b) {
   }
 }
 
-unsigned long long readCycles()
-{
-    unsigned long long cycles;
-    asm volatile ("rdcycle %0" : "=r" (cycles));
-    return cycles;
-}
-
-auto map_cycles = 0;
 
 template <typename T>
 Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoords, const Tensor* InputStrides, 
                               Tensor* &OutputCoords, Tensor* &Nbmaps, Tensor* &Nbsizes) const {
-  auto map_start = readCycles();
+  unsigned long long map_start = read_cycles();
   std::vector<int64_t> kernel_shape = conv_attrs_.kernel_shape_;
   std::vector<int64_t> dilations(conv_attrs_.dilations);
   if (dilations.empty()) {
@@ -388,7 +395,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   // for (size_t i = 0; i < sum_nbmaps; i++){
   //   std::cout << nbmaps_data[i * 2] << " " << nbmaps_data[i * 2 + 1] << std::endl;
   // }
-  auto map_end = readCycles();
+  unsigned long long map_end = read_cycles();
   map_cycles += map_end - map_start;
   std::cout << "debug-zxr: end buildkmap" << std::endl;
   return Status::OK();
@@ -398,6 +405,8 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
 template <typename T>
 Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &OutputFeats, const Tensor* Weight, 
                                         const Tensor* Nbmaps, const Tensor* Nbsizes) const {
+
+  unsigned long long conv_start = read_cycles();
 
   const float* input_feats_data = InputFeats->template Data<float>();
   float* output_feats_data = OutputFeats->template MutableData<float>();
@@ -411,14 +420,17 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &Output
                           static_cast<const int>(Weight->Shape()[1]), static_cast<const int>(Weight->Shape()[2]), 
                           static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), 
                           static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());                   
+  unsigned long long conv_end = read_cycles();
+  conv_cycles += conv_end - conv_start;
   std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
-  print_cycles();
-  std::cout << "Map cycles: " << map_cycles << std::endl;
   return Status::OK();
 }
 
 template <typename T>
 Status SpConv3d<T>::PropagateTensorDataFromInputToOutput(const Tensor* X, Tensor* Y) const {
+  
+  unsigned long long io_start = read_cycles();
+  
   ORT_ENFORCE(X != nullptr);
   const TensorShape& shape = X->Shape();
   auto X_type = X->DataType();
@@ -436,10 +448,12 @@ Status SpConv3d<T>::PropagateTensorDataFromInputToOutput(const Tensor* X, Tensor
       std::copy(src, src + shape.Size(), dst);
     }
   }
+  unsigned long long io_end = read_cycles();
+  io_cycles += io_end - io_start;
   return Status::OK();
 }
 
 }  // namespace systolic
 }  // namespace onnxruntime
 
-#endif
+// #endif

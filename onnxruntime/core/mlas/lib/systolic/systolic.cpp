@@ -660,19 +660,17 @@ void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
 
 void print_cycles() {
 
-    auto matmul_percentage = (float)matmul_cycles / total_cycles;
-    auto scatter_percentage = (float)scatter_cycles / total_cycles;
-    auto gather_percentage = (float)gather_cycles / total_cycles;
-
-
+    // auto matmul_percentage = (float)matmul_cycles / total_cycles;
+    // auto scatter_percentage = (float)scatter_cycles / total_cycles;
+    // auto gather_percentage = (float)gather_cycles / total_cycles;
 
     std::cout << "Scatter cycles: " << scatter_cycles << std::endl;
-    std::cout << "Scatter takes " << scatter_percentage * 100 << "% of total cycles" << std::endl;
+    // std::cout << "Scatter takes " << scatter_percentage * 100 << "% of forward cycles" << std::endl;
     std::cout << "Matmul cycles: " << matmul_cycles << std::endl;
-    std::cout << "Matmul takes " << matmul_percentage * 100 << "% of total cycles" << std::endl;
+    // std::cout << "Matmul takes " << matmul_percentage * 100 << "% of forward cycles" << std::endl;
     std::cout << "Gather cycles: " << gather_cycles << std::endl;
-    std::cout << "Gather takes " << gather_percentage * 100 << "% of total cycles" << std::endl;
-    std::cout << "Convolution Forward cycles in total: " << total_cycles << std::endl;
+    // std::cout << "Gather takes " << gather_percentage * 100 << "% of forward cycles" << std::endl;
+    // std::cout << "Convolution Forward cycles in total: " << total_cycles << std::endl;
 
     std::cout << "Hash cycles: " << hash_cycles << std::endl;
     std::cout << "Hash kernel cycles: " << hash_kernel_cycles << std::endl;

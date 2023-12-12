@@ -28,11 +28,17 @@
 
 namespace onnxruntime {
 
+inline unsigned long long read_cycles() {
+    unsigned long long cycles;
+    asm volatile ("rdcycle %0" : "=r" (cycles));
+    return cycles;
+}
+
 template <typename T>
 class BatchNorm : public OpKernel {
  public:
   explicit BatchNorm(const OpKernelInfo& op_kernel_info) : OpKernel(op_kernel_info),
-                                                           is_spatial_(op_kernel_info.GetAttrOrDefault<int64_t>("spatial", 1) == 1) {
+                                                           is_spatial_(op_kernel_info.GetAttrOrDefault<int64_t>("spatial", 1) == 1) {    
     auto st = op_kernel_info.GetAttr<float>("epsilon", &epsilon_);
     ORT_ENFORCE(st.IsOK(), st.ErrorMessage());
     auto mt = op_kernel_info.GetAttr<float>("momentum", &momentum_);
@@ -46,7 +52,12 @@ class BatchNorm : public OpKernel {
     ORT_ENFORCE(!is_train_ || is_spatial_, "Training mode does not support non-spatial BN");
   }
 
+  static unsigned long long norm_cycles;
+
   Status Compute(OpKernelContext* p_op_kernel_context) const override {
+
+    unsigned long long norm_start = read_cycles();
+
     const auto* X = p_op_kernel_context->Input<Tensor>(0);
     const auto* scale = p_op_kernel_context->Input<Tensor>(1);
     const auto* B = p_op_kernel_context->Input<Tensor>(2);
@@ -171,6 +182,10 @@ class BatchNorm : public OpKernel {
         Y_arr.col(n) = X_arr.col(n) * new_scale.col(0) + new_bias.col(0);
       }
     }
+
+    norm_cycles += read_cycles() - norm_start;
+    std::cout << "norm_cycles: " << norm_cycles << std::endl;
+
     return Status::OK();
   }
 
@@ -180,4 +195,8 @@ class BatchNorm : public OpKernel {
   const bool is_spatial_;
   int64_t is_train_;
 };
+
+template <typename T>
+unsigned long long BatchNorm<T>::norm_cycles = 0;
+
 }  // namespace onnxruntime

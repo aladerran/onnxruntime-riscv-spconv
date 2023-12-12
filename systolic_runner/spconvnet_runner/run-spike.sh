@@ -20,7 +20,7 @@ cp -r data/0.1k/* .
 # For each test, replace the placeholder with your ELF file path and other parameters
 {
   echo ===================== Runtime begins =====================
-  spike --extension=gemmini pk ort_test -m unet_v2.onnx -p caffe2 -x 1 -O 99
+  spike --extension=gemmini pk ort_test -m unet_v2.onnx -p caffe2 -x 1 -O 99 -t ./trace_unet_gemmini
   echo ===================== Runtime ends =====================
 } >> unet_Gemmini_spike.log 2>&1
 

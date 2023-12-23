@@ -7,6 +7,14 @@
 namespace onnxruntime {
 namespace contrib {
 
+inline unsigned long long read_cycles() {
+    unsigned long long cycles;
+    asm volatile ("rdcycle %0" : "=r" (cycles));
+    return cycles;
+}
+
+unsigned long long fused_cycles = 0;
+
 template <typename T>
 class FusedBatchNorm final : public BatchNorm<T> {
  public:
@@ -15,6 +23,9 @@ class FusedBatchNorm final : public BatchNorm<T> {
   }
 
   Status Compute(OpKernelContext* context) const override {
+
+    unsigned long long fused_start = read_cycles();
+
     const auto* X = context->Input<Tensor>(0);
     const auto* scale = context->Input<Tensor>(1);
     const auto* B = context->Input<Tensor>(2);
@@ -141,6 +152,10 @@ class FusedBatchNorm final : public BatchNorm<T> {
         Y_arr.col(n) = Y_arr.col(n).cwiseMax(0);
       }
     }
+
+    fused_cycles += read_cycles() - fused_start;
+    std::cout << "Fused BatchNorm cycles: " << fused_cycles << std::endl;
+
     return Status::OK();
   }
 

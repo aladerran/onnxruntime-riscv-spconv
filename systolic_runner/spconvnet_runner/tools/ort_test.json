@@ -1,0 +1,13 @@
+{
+  "base": "br-base.json",
+  "name": "ort_test",
+  "outputs": [
+    "/output/trace_spconv3d_gemmini.json",
+    "/output/trace_resnet_gemmini.json",
+    "/output/trace_unet_gemmini.json"
+  ],
+  "overlay": "../onnxruntime-riscv-spconv/systolic_runner/spconvnet_runner",
+  "rootfs-size": "16GiB",
+  "run": "run-ort.sh",
+  "spike-args": "--extension=gemmini"
+}

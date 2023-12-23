@@ -8,6 +8,7 @@
 #include <fstream>
 #include <systolic/systolic_provider_factory.h>
 #include <onnxruntime_cxx_api.h>
+#include <omp.h>
 
 #ifdef FOR_FIRESIM
 #include <sys/mman.h>

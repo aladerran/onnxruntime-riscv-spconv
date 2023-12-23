@@ -1,4 +1,4 @@
-# #!/bin/bash
+#!/bin/bash
 set -e
 
 # Change to the project directory
@@ -24,23 +24,23 @@ cp -r data/0.1k/* .
   echo ===================== Runtime ends =====================
 } >> unet_Gemmini_spike.log 2>&1
 
-# {
-#   echo ===================== Runtime begins =====================
-#   spike --extension=gemmini pk ort_test -m resnet_v2.onnx -p caffe2 -x 1 -O 99
-#   echo ===================== Runtime ends =====================
-# } >> resnet_Gemmini_spike.log 2>&1
+{
+  echo ===================== Runtime begins =====================
+  spike --extension=gemmini pk ort_test -m resnet_v2.onnx -p caffe2 -x 1 -O 99 -t ./trace_resnet_gemmini
+  echo ===================== Runtime ends =====================
+} >> resnet_Gemmini_spike.log 2>&1
 
-# {
-#   echo ===================== Runtime begins =====================
-#   spike --extension=gemmini pk ort_test -m unet_v2.onnx -p caffe2 -x 0 -O 99
-#   echo ===================== Runtime ends =====================
-# } >> unet_CPU_spike.log 2>&1
+{
+  echo ===================== Runtime begins =====================
+  spike --extension=gemmini pk ort_test -m unet_v2.onnx -p caffe2 -x 0 -O 99
+  echo ===================== Runtime ends =====================
+} >> unet_CPU_spike.log 2>&1
 
-# {
-#   echo ===================== Runtime begins =====================
-#   spike --extension=gemmini pk ort_test -m resnet_v2.onnx -p caffe2 -x 0 -O 99
-#   echo ===================== Runtime ends =====================
-# } >> resnet_CPU_spike.log 2>&1
+{
+  echo ===================== Runtime begins =====================
+  spike --extension=gemmini pk ort_test -m resnet_v2.onnx -p caffe2 -x 0 -O 99
+  echo ===================== Runtime ends =====================
+} >> resnet_CPU_spike.log 2>&1
 
 
 rm -f *.csv *.onnx

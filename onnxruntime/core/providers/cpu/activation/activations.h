@@ -9,7 +9,16 @@
 #include "core/util/math_cpuonly.h"
 #include "core/providers/cpu/element_wise_ranged_transform.h"
 
+// In the header file
+static unsigned long long relu_cycles;
+
 namespace onnxruntime {
+
+inline unsigned long long read_cycles() {
+    unsigned long long cycles;
+    asm volatile ("rdcycle %0" : "=r" (cycles));
+    return cycles;
+}
 
 namespace functors {
 
@@ -115,11 +124,16 @@ struct Relu : public ElementWiseRangedTransform<T> {
     return 1.0f;
   }
   void operator()(std::ptrdiff_t first, std::ptrdiff_t last) const final {
+
+    unsigned long long relu_start = read_cycles();
+
     ptrdiff_t len = last - first;
     T* output_ptr = this->output + first;
     ConstEigenVectorArrayMap<T> xm(this->input + first, len);
     EigenVectorArrayMap<T> ym(output_ptr, len);
     ym = xm.cwiseMax(0);
+    relu_cycles += read_cycles() - relu_start;
+    std::cout << "Relu cycles: " << relu_cycles << std::endl;
   }
 };
 

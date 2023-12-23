@@ -428,7 +428,8 @@ void matmul_type_dispatch(tiled_matmul_type_t tiled_matmul_type,
     
     switch (tiled_matmul_type) {
         case CPU:
-            slow_matmul(A, B, C, M, N, K);
+            // slow_matmul(A, B, C, M, N, K);
+            gemmini_matmul(A, B, C, M, N, K, CPU);
             break;
         case OS:
             std::cout << "Using Gemmini OS Matmul!" << std::endl;

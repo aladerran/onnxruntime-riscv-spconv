@@ -184,7 +184,7 @@ class BatchNorm : public OpKernel {
     }
 
     norm_cycles += read_cycles() - norm_start;
-    std::cout << "norm_cycles: " << norm_cycles << std::endl;
+    std::cout << "BatchNormolization cycles: " << norm_cycles << std::endl;
 
     return Status::OK();
   }

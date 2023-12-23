@@ -12,6 +12,17 @@
 #include <cmath>
 
 namespace onnxruntime {
+
+
+static long long add_cycles = 0;
+
+inline unsigned long long read_cycles() {
+    unsigned long long cycles;
+    asm volatile ("rdcycle %0" : "=r" (cycles));
+    return cycles;
+}
+
+
 // Supported types for operators that have type reduction enabled
 namespace op_kernel_type_control {
 // Max
@@ -420,6 +431,9 @@ static void UntypedBroadcastVariadic(int input_count, OpKernelContext& context,
 
 template <typename T>
 Status Add<T>::Compute(OpKernelContext* context) const {
+
+  unsigned long long add_start = read_cycles();
+
   // BroadcastHelper received as argument may differ from 'helper' when parallelizing within a span
   ProcessBroadcastSpanFuncs funcs{
       [](BroadcastHelper& per_iter_bh) {
@@ -433,6 +447,10 @@ Status Add<T>::Compute(OpKernelContext* context) const {
       }};
 
   UntypedBroadcastTwo(*context, funcs, 1.0f);
+
+  unsigned long long add_end = read_cycles();
+  add_cycles += add_end - add_start;
+  std::cout << "Add cycles: " << add_cycles << std::endl;
   return Status::OK();
 }
 

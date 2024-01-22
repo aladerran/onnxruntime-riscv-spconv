@@ -10,7 +10,6 @@
 #include "conv_pool_helper.h"
 #include <algorithm> // std::sort needs this
 #include <cstdint>
-#include "omp.h"
 
 // #ifdef SYSTOLIC_FP32
 
@@ -57,9 +56,12 @@ void write_csv(const int* data, const TensorShape& shape, const std::string& fil
 }
 
 unsigned long long map_cycles;
-unsigned long long io_cycles;
 unsigned long long conv_cycles;
 unsigned long long total_cycles;
+unsigned long long downsample_cycles;
+unsigned long long kernel_offset_cycles;
+unsigned long long parse_nbsizes_cycles;
+unsigned long long parse_nbmaps_cycles;
 
 template <typename T>
 Status SpConv3d<T>::Compute(OpKernelContext* context) const {
@@ -161,9 +163,13 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   unsigned long long total_end = read_cycles();
   total_cycles += total_end - total_start;
   print_cycles();
-  std::cout << "Convolution cycles: " << conv_cycles << std::endl;
+  std::cout << "==================" << std::endl;
+  std::cout << "Compute kernel offset cycles: " << kernel_offset_cycles << std::endl;
+  std::cout << "Downsample cycles: " << downsample_cycles << std::endl;
+  std::cout << "Parse nbsizes cycles: " << parse_nbsizes_cycles << std::endl;
+  std::cout << "Parse nbmaps cycles: " << parse_nbmaps_cycles << std::endl;
   std::cout << "Map processing cycles: " << map_cycles << std::endl;
-  std::cout << "IO propagation cycles: " << io_cycles << std::endl;
+  std::cout << "Convolution forward cycles: " << conv_cycles << std::endl;
   std::cout << "SpConv3D total cycles: " << total_cycles << std::endl;
 
   return Status::OK();
@@ -197,6 +203,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   }
   const int* input_strides_data = InputStrides->template Data<int32_t>();
   // build kernel offsets
+  auto kernel_offset_start = read_cycles();
   std::vector<int32_t> x_dim_offsets(kernel_shape[0]);
   std::vector<int32_t> y_dim_offsets(kernel_shape[1]);
   std::vector<int32_t> z_dim_offsets(kernel_shape[2]);
@@ -212,7 +219,6 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   int32_t kernel_volume = static_cast<int32_t>(kernel_shape[0] * kernel_shape[1] * kernel_shape[2]);
   std::vector<int32_t> offsets(kernel_volume * 3);
   if(kernel_volume % 2 == 1){
-    #pragma omp parallel for collapse(3)
     for (size_t i = 0; i < kernel_shape[2]; i++) {
       for (size_t j = 0; j < kernel_shape[1]; j++) {
         for (size_t k = 0; k < kernel_shape[0]; k++) {
@@ -223,7 +229,6 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       }
     }
   } else {
-    #pragma omp parallel for collapse(3)
     for (size_t i = 0; i < kernel_shape[0]; i++) {
       for (size_t j = 0; j < kernel_shape[1]; j++) {
         for (size_t k = 0; k < kernel_shape[2]; k++) {
@@ -234,6 +239,8 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       }
     }
   }
+  auto kernel_offset_end = read_cycles();
+  kernel_offset_cycles += kernel_offset_end - kernel_offset_start;
   
 
   const TensorShape& input_coords_shape = InputCoords -> Shape();
@@ -244,6 +251,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   int* output_coords_data;
   int64_t num_output_coords;
   size_t count;
+  auto downsample_start = read_cycles();
   if ( conv_attrs_.strides[0] > 1 || conv_attrs_.strides[1] > 1 || conv_attrs_.strides[2] > 1) {
     //downsampling
     std::vector<std::vector<int32_t>> output_coords_vector_uncoalesced;
@@ -257,12 +265,11 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
 
       output_coords_vector_uncoalesced.resize(input_coords_shape[0], std::vector<int32_t>(4));
 
-      #pragma omp parallel for
       for (size_t i = 0; i < input_coords_shape[0]; i++) {
         output_coords_vector_uncoalesced[i][0] = input_coords_data[ i * 4 ] / sample_stride[0] * sample_stride[0];
         output_coords_vector_uncoalesced[i][1] = input_coords_data[ i * 4 + 1 ] / sample_stride[1] * sample_stride[1];
         output_coords_vector_uncoalesced[i][2] = input_coords_data[ i * 4 + 2 ] / sample_stride[2] * sample_stride[2];
-        output_coords_vector_uncoalesced[i][3] = input_coords_data[ i * 4 + 3 ];
+        // output_coords_vector_uncoalesced[i][3] = input_coords_data[ i * 4 + 3 ];
       }
       
     } else {
@@ -273,7 +280,6 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       int32_t min[3] = {INT32_MAX, INT32_MAX, INT32_MAX};
       int32_t max[3] = {INT32_MIN, INT32_MIN, INT32_MIN};
 
-      #pragma omp parallel for
       for(size_t i = 0; i < input_coords_shape[0]; i++) {
         min[0] = min[0] <= input_coords_data[i * 4] ? min[0] : input_coords_data[i * 4];
         max[0] = max[0] >= input_coords_data[i * 4] ? max[0] : input_coords_data[i * 4];
@@ -289,21 +295,20 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       output_coords_vector_uncoalesced.resize(uncoalesced_size, std::vector<int32_t>(4));
       // output_coords_vector_uncoalesced.reserve(uncoalesced_size);
       count = 0;
-      #pragma omp parallel for
       for(size_t i = 0; i < input_coords_shape[0]; i++) {
         for(size_t j = 0; j < kernel_volume; j++) {
           int coord[4];
           coord[0] = input_coords_data[ i * 4 ] + offsets[ j * 3];
           coord[1] = input_coords_data[ i * 4 + 1] + offsets[ j * 3 + 1];
           coord[2] = input_coords_data[ i * 4 + 2] + offsets[ j * 3 + 2];
-          coord[3] = input_coords_data[ i * 4 + 3];
+          // coord[3] = input_coords_data[ i * 4 + 3];
           if( coord[0] % sample_stride[0] == 0 && coord[0] >= min[0] /* &&coord[0] <= max[0] */ 
               && coord[1] % sample_stride[1] == 0 && coord[1] >= min[1] /* &&coord[0] <= max[0] */ 
               && coord[2] % sample_stride[2] == 0 && coord[2] >= min[2] /* &&coord[0] <= max[0] */ ){
             output_coords_vector_uncoalesced[count][0] = coord[0];
             output_coords_vector_uncoalesced[count][1] = coord[1];
             output_coords_vector_uncoalesced[count][2] = coord[2];
-            output_coords_vector_uncoalesced[count][3] = coord[3];
+            // output_coords_vector_uncoalesced[count][3] = coord[3];
             count++;
           }
         }
@@ -319,12 +324,11 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     std::vector<int64_t> output_coords_shape({num_output_coords, 4});
     OutputCoords = context->Output(0, output_coords_shape);
     output_coords_data = OutputCoords -> template MutableData<int32_t>();
-    #pragma omp parallel for
     for (size_t i = 0; i < num_output_coords; ++i){
       output_coords_data[i * 4] = output_coords_vector_uncoalesced[i][0];
       output_coords_data[i * 4 + 1] = output_coords_vector_uncoalesced[i][1];
       output_coords_data[i * 4 + 2] = output_coords_vector_uncoalesced[i][2];
-      output_coords_data[i * 4 + 3] = output_coords_vector_uncoalesced[i][3];
+      // output_coords_data[i * 4 + 3] = output_coords_vector_uncoalesced[i][3];
     }
     
   } else {
@@ -334,6 +338,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(InputCoords, OutputCoords));
     output_coords_data = OutputCoords -> template MutableData<int32_t>();
   }
+  downsample_cycles += read_cycles() - downsample_start;
 
   std::vector<int64_t> queries(num_output_coords * kernel_volume);
   kernel_hash_cpu(output_coords_data, offsets.data(), queries.data(), num_output_coords, kernel_volume);
@@ -348,8 +353,8 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   std::vector<int64_t> nbsizes_shape({kernel_volume});
   Nbsizes = context->Output(4, nbsizes_shape);
   std::cout << "debug-zxr: parse nbsizes" << std::endl;
+  auto parse_nbsizes_start = read_cycles();
   int* nbsizes_data = Nbsizes->template MutableData<int32_t>();
-  #pragma omp parallel for
   for (size_t i = 0; i < kernel_volume; i++){
     size_t sum = 0;
     for(size_t j = 0; j < num_output_coords; j++){
@@ -364,6 +369,9 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
     nbsizes_data[i] = sum;
   }
 
+  auto parse_nbsizes_end = read_cycles();
+  parse_nbsizes_cycles += parse_nbsizes_end - parse_nbsizes_start;
+
   // std::cout << "nbsizes: " << std::endl;
   // for (size_t i = 0; i < kernel_volume; i++){
   //   std::cout << nbsizes_data[i] << " ";
@@ -372,8 +380,8 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
 
   //parse nbmaps
   std::cout << "debug-zxr: parse nbmaps" << std::endl;
+  auto parse_nbmaps_start = read_cycles();
   int64_t sum_nbmaps = 0;
-  #pragma omp parallel for
   for(size_t i = 0; i < kernel_volume; i++){
     sum_nbmaps += nbsizes_data[i];
   }
@@ -381,7 +389,6 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   Nbmaps = context->Output(3, nbmaps_shape);
   int* nbmaps_data = Nbmaps->template MutableData<int32_t>();
   count = 0;
-  #pragma omp parallel for
   for (size_t i = 0; i < kernel_volume; i++){
     for(size_t j = 0; j < num_output_coords; j++){
       if(results[i * num_output_coords + j] != 0) {
@@ -397,6 +404,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   // }
   unsigned long long map_end = read_cycles();
   map_cycles += map_end - map_start;
+  parse_nbmaps_cycles += read_cycles() - parse_nbmaps_start;
   std::cout << "debug-zxr: end buildkmap" << std::endl;
   return Status::OK();
 }
@@ -428,9 +436,7 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &Output
 
 template <typename T>
 Status SpConv3d<T>::PropagateTensorDataFromInputToOutput(const Tensor* X, Tensor* Y) const {
-  
-  unsigned long long io_start = read_cycles();
-  
+    
   ORT_ENFORCE(X != nullptr);
   const TensorShape& shape = X->Shape();
   auto X_type = X->DataType();
@@ -449,7 +455,6 @@ Status SpConv3d<T>::PropagateTensorDataFromInputToOutput(const Tensor* X, Tensor
     }
   }
   unsigned long long io_end = read_cycles();
-  io_cycles += io_end - io_start;
   return Status::OK();
 }
 

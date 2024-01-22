@@ -16,7 +16,7 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-function"
 #include "systolic_include.h"
-#include "omp.h"
+#pragma GCC diagnostic pop
 
 /**
  * Perform a matmul and subsequent quantization.
@@ -382,30 +382,21 @@ unsigned long long read_cycles()
     return cycles;
 }
 
+/**
+ * Systolic sparse convolution backend, CPU implementation also included
+ ==================================================================================================
+ */
+
+unsigned long long gather_cycles;
 unsigned long long scatter_cycles;
 unsigned long long matmul_cycles;
-unsigned long long gather_cycles;
-unsigned long long total_cycles;
 unsigned long long hash_cycles;
 unsigned long long hash_kernel_cycles;
+unsigned long long hash_query_cycles;
 
-// systolic sparse backend
-
-// Naive matmul
-void slow_matmul(const float *A, const float *B, float *C, int M, int N, int K) {
-    for(int i = 0; i < M; ++i) {
-        for(int j = 0; j < N; ++j) {
-            float sum = 0.0;
-            for(int k = 0; k < K; ++k) {
-                sum += A[i * K + k] * B[k * N + j];
-            }
-            C[i * N + j] = sum;
-        }
-    }
-}
 
 // Gemmini matmul
-void gemmini_matmul(const float *A, const float *B, float *C, int M, int N, int K,
+void matmul_gemmini(const float *A, const float *B, float *C, int M, int N, int K,
                     tiled_matmul_type_t tiled_matmul_type){
 
     tiled_matmul_auto((size_t)M, (size_t)N, (size_t)K, 
@@ -428,16 +419,15 @@ void matmul_type_dispatch(tiled_matmul_type_t tiled_matmul_type,
     
     switch (tiled_matmul_type) {
         case CPU:
-            // slow_matmul(A, B, C, M, N, K);
-            gemmini_matmul(A, B, C, M, N, K, CPU);
+            matmul_gemmini(A, B, C, M, N, K, CPU);
             break;
         case OS:
             std::cout << "Using Gemmini OS Matmul!" << std::endl;
-            gemmini_matmul(A, B, C, M, N, K, OS);
+            matmul_gemmini(A, B, C, M, N, K, OS);
             break;
         case WS:
             std::cout << "Using Gemmini WS Matmul!" << std::endl;
-            gemmini_matmul(A, B, C, M, N, K, WS);
+            matmul_gemmini(A, B, C, M, N, K, WS);
             break;
         default:
             throw std::invalid_argument("Invalid matmul type");
@@ -445,10 +435,11 @@ void matmul_type_dispatch(tiled_matmul_type_t tiled_matmul_type,
 
     auto matmul_end = read_cycles();
 
-    matmul_cycles += matmul_end -matmul_start;
+    matmul_cycles += matmul_end - matmul_start;
+
+    std::cout << "Using accelerated matmul with dimensions (" << M << ", " << N << ", " << K << ")" << std::endl;
 
 }
-
 
 
 void scatter_cpu(const int n_in, const int n_out, const int c,
@@ -462,7 +453,6 @@ void scatter_cpu(const int n_in, const int n_out, const int c,
         if (out_pos < 0) {
             continue;
         }
-        #pragma omp parallel for
         for (int j = 0; j < c; j++) {
             out_feat[out_pos * c + j] += in_feat[i * c + j];
         }
@@ -473,6 +463,7 @@ void scatter_cpu(const int n_in, const int n_out, const int c,
     scatter_cycles += scatter_end - scatter_start;
 
 }
+
 
 void gather_cpu(const int n_k, const int n_in, const int c,
                 const float *in_feat, float *out_feat, const int *kmap,
@@ -485,7 +476,6 @@ void gather_cpu(const int n_k, const int n_in, const int c,
         if (in_pos < 0) {
             continue;
         }
-        #pragma omp parallel for
         for (int j = 0; j < c; j++) {
             out_feat[i * c + j] = in_feat[in_pos * c + j];
         }
@@ -510,8 +500,6 @@ void convolution_forward_cpu(const float* in_feat,
                              const int out_nrows,
                              const int kernel_volume,
                              char accelerator_mode) {
-
-    auto total_cycles_start = read_cycles();
 
     tiled_matmul_type_t tiled_matmul_type = get_accelerator_mode(accelerator_mode);
 
@@ -585,16 +573,14 @@ void convolution_forward_cpu(const float* in_feat,
         cur_offset += 2 * neighbor_offset[i];
     }
 
-    auto total_cycles_end = read_cycles();
-    total_cycles += total_cycles_end - total_cycles_start;
 }
 
 
 void cpu_hash_wrapper(const int N, const int *data, int64_t *out) {
-#pragma omp parallel for
     for (int i = 0; i < N; i++) {
         uint64_t hash = 14695981039346656037UL;
-        for (int j = 0; j < 4; j++) {
+        // for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < 3; j++) {
             hash ^= (unsigned int)data[4 * i + j];
             hash *= 1099511628211UL;
         }
@@ -603,18 +589,19 @@ void cpu_hash_wrapper(const int N, const int *data, int64_t *out) {
     }
 }
 
+
 void cpu_kernel_hash_wrapper(const int N, const int K, const int *data,
                              const int *kernel_offset, int64_t *out) {
     for (int k = 0; k < K; k++) {
-#pragma omp parallel for
         for (int i = 0; i < N; i++) {
             int cur_coord[4];
             for (int j = 0; j < 3; j++) {
                 cur_coord[j] = data[i * 4 + j] + kernel_offset[k * 3 + j];
             }
-            cur_coord[3] = data[i * 4 + 3];
+            // cur_coord[3] = data[i * 4 + 3];
             uint64_t hash = 14695981039346656037UL;
-            for (int j = 0; j < 4; j++) {
+            // for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < 3; j++) {
                 hash ^= (unsigned int)cur_coord[j];
                 hash *= 1099511628211UL;
             }
@@ -624,12 +611,14 @@ void cpu_kernel_hash_wrapper(const int N, const int K, const int *data,
     }
 }
 
+
 void hash_cpu(const int *idx, int64_t *out, const int N) {
     auto hash_start = read_cycles();
     cpu_hash_wrapper(N, idx, out);
     auto hash_end = read_cycles();
     hash_cycles += hash_end - hash_start;
 }
+
 
 void kernel_hash_cpu(const int *idx, const int *kernel_offset,
                      int64_t *out, const int N, const int K) {
@@ -639,8 +628,10 @@ void kernel_hash_cpu(const int *idx, const int *kernel_offset,
     hash_kernel_cycles += hash_end - hash_start;
 }
 
+
 void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
                     const int64_t* idx_target, int64_t* out, const int n, const int n1) {
+    auto hash_query_start = read_cycles();
     google::dense_hash_map<int64_t, int64_t> hashmap;
     hashmap.set_empty_key(0);
     
@@ -649,7 +640,6 @@ void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
         int64_t val = idx_target[idx] + 1;
         hashmap.insert(std::make_pair(key, val));
     }
-#pragma omp parallel for
     for (int idx = 0; idx < n1; idx++) {
         int64_t key = hash_query[idx];
         google::dense_hash_map<int64_t, int64_t>::iterator iter = hashmap.find(key);
@@ -657,24 +647,18 @@ void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
             out[idx] = iter->second;
         }
     }
+    hash_query_cycles += read_cycles() - hash_query_start;
 }
+
 
 void print_cycles() {
 
-    // auto matmul_percentage = (float)matmul_cycles / total_cycles;
-    // auto scatter_percentage = (float)scatter_cycles / total_cycles;
-    // auto gather_percentage = (float)gather_cycles / total_cycles;
-
     std::cout << "Scatter cycles: " << scatter_cycles << std::endl;
-    // std::cout << "Scatter takes " << scatter_percentage * 100 << "% of forward cycles" << std::endl;
     std::cout << "Matmul cycles: " << matmul_cycles << std::endl;
-    // std::cout << "Matmul takes " << matmul_percentage * 100 << "% of forward cycles" << std::endl;
     std::cout << "Gather cycles: " << gather_cycles << std::endl;
-    // std::cout << "Gather takes " << gather_percentage * 100 << "% of forward cycles" << std::endl;
-    // std::cout << "Convolution Forward cycles in total: " << total_cycles << std::endl;
-
     std::cout << "Hash cycles: " << hash_cycles << std::endl;
     std::cout << "Hash kernel cycles: " << hash_kernel_cycles << std::endl;
-}
+    std::cout << "Hash query cycles: " << hash_query_cycles << std::endl;
 
-#pragma GCC diagnostic pop
+    std::cout << "Data movement cycles: " << scatter_cycles + gather_cycles << std::endl;
+}

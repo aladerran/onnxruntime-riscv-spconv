@@ -187,15 +187,15 @@ void test_infer(const std::string& preprocess, Ort::Session& session,
 
   // print outputs
 
-  // int32_t* coords_arr = output_tensors[0].GetTensorMutableData<int32_t>();
-  // float* feats_arr = output_tensors[1].GetTensorMutableData<float>();
+  int32_t* coords_arr = output_tensors[0].GetTensorMutableData<int32_t>();
+  float* feats_arr = output_tensors[1].GetTensorMutableData<float>();
   // int32_t* strides_arr = output_tensors[2].GetTensorMutableData<int32_t>();
   // int32_t* nbmaps_arr = output_tensors[3].GetTensorMutableData<int32_t>();
   // int32_t* nbsizes_arr = output_tensors[4].GetTensorMutableData<int32_t>();
   // int64_t* sizes_io_arr = output_tensors[5].GetTensorMutableData<int64_t>();
 
-  // save_coords(coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data(), "output_coords.csv");
-  // save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data(), "output_feats.csv");
+  save_coords(coords_arr, output_tensors[0].GetTensorTypeAndShapeInfo().GetShape().data(), "output_coords.csv");
+  save_feats(feats_arr, output_tensors[1].GetTensorTypeAndShapeInfo().GetShape().data(), "output_feats.csv");
 
   return;
 }

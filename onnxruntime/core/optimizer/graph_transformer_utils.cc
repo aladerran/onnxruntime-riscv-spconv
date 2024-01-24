@@ -208,7 +208,7 @@ std::vector<std::unique_ptr<GraphTransformer>> GenerateTransformers(
       }
 
       //zxr
-      transformers.emplace_back(std::make_unique<BatchnormReluFusion>(cpu_ep));
+      // transformers.emplace_back(std::make_unique<BatchnormReluFusion>(cpu_ep));
 
 
 #endif

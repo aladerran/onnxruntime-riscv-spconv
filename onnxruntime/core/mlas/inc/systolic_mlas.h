@@ -114,6 +114,11 @@ void SystolicConvBackpropFilter(char accelerator_mode, int batch_size, int in_di
                   bool relu,
                   float output_scale);
 
+void SystolicAdd
+MLASCALL(char accelerator_mode, bool relu, const float* in1, float in1_scale, const float* in2,
+         float in2_scale,
+         float* out, float out_scale, int dim);
+
 
 // Add sparse conv backend
 

@@ -1299,9 +1299,7 @@ common::Status InferenceSession::Initialize() {
         session_id_, model_->IrVersion(), model_->ProducerName(), model_->ProducerVersion(), model_->Domain(),
         model_->MainGraph().DomainToVersionMap(), model_->MainGraph().Name(), model_->MetaData(),
         telemetry_.event_name_, execution_providers_.GetIds(), model_has_fp16_inputs);
-    // std::cout << "start log success" << std::endl;// for debugging purposes-zxr
     LOGS(*session_logger_, INFO) << "Session successfully initialized.";
-    // std::cout << "end log success" << std::endl;// for debugging purposes-zxr
   }
   ORT_CATCH(const NotImplementedException& ex) {
     ORT_HANDLE_EXCEPTION([&]() {
@@ -1430,9 +1428,6 @@ common::Status InferenceSession::ValidateInputs(const std::vector<std::string>& 
 
   for (size_t i = 0; i < feeds.size(); ++i) {
     const auto& feed_name = feed_names[i];
-
-    // std::cout << "check input:" << feed_name << "," << feed_names[i] << std::endl;// for debugging purposes-zxr
-
     auto iter = input_def_map_.find(feed_name);
     if (input_def_map_.end() == iter) {
       return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "Invalid Feed Input Name:", feed_name);
@@ -1966,7 +1961,6 @@ common::Status InferenceSession::SaveModelMetadata(const onnxruntime::Model& mod
     for (auto elem : inputs) {
       auto elem_type = utils::GetMLDataType(*elem);
       auto elem_shape_proto = elem->Shape();
-      //std::cout << "insert into input_def_map_:" << elem->Name() << "/" << elem_type << std::endl;// for debugging purposes-zxr
       input_def_map_.insert(
           {elem->Name(),
            InputDefMetaData(

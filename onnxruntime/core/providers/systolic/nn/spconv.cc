@@ -24,7 +24,8 @@ ONNX_OPERATOR_KERNEL_EX(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     SpConv3d<float>);
 
-// for debugging print|| zxr
+namespace {
+  // for debugging print|| zxr
 void write_csv(const int* data, const TensorShape& shape, const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
@@ -55,6 +56,21 @@ void write_csv(const int* data, const TensorShape& shape, const std::string& fil
     file.close();
 }
 
+bool cmp(std::vector<int32_t> &a, std::vector<int32_t> &b) {
+  if(a[3] != b[3]){
+    return a[3] < b[3];
+  } else if(a[0] != b[0]){
+    return a[0] < b[0];
+  } else if(a[1] != b[1]){
+    return a[1] < b[1];
+  } else {
+    return a[2] < b[2];
+  }
+}
+
+
+
+}// namespace
 
 template <typename T>
 Status SpConv3d<T>::Compute(OpKernelContext* context) const {
@@ -70,8 +86,8 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
 
     // OutputCoords_i, Nbmaps_i, Nbsizes_i, SizesIO_i should be provided togather, or none of them is provided
 
-  std::cout << "debug-zxr: start spconv3d computing" << std::endl;
-  std::cout << "debug-zxr:domain:" << context->GetOpDomain() << " /type:" << context->GetOpType() << " /name:" << context->GetNodeName() << std::endl;
+  // std::cout << "debug-zxr: start spconv3d computing" << std::endl;
+  // std::cout << "debug-zxr:domain:" << context->GetOpDomain() << " /type:" << context->GetOpType() << " /name:" << context->GetNodeName() << std::endl;
   std::string node_name = context->GetNodeName();
   // bool printflag = node_name.find("encoders.0/convblock/conv3d")!=std::string::npos;
 
@@ -146,7 +162,7 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
       ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(Nbsizes_i, Nbsizes_o));
       // ORT_RETURN_IF_ERROR(PropagateTensorDataFromInputToOutput(SizesIO_i, SizesIO_o));
     } else {
-      std::cout << "debug-zxr: start buildkmap" << std::endl;
+      // std::cout << "debug-zxr: start buildkmap" << std::endl;
       ORT_RETURN_IF_ERROR(BuildKmap(context, InputCoords, InputStrides, OutputCoords, Nbmaps_o, Nbsizes_o));
       int32_t* sizes_io_data = SizesIO_o -> MutableData<int32_t>();
       sizes_io_data[0] = static_cast<int32_t>(InputCoords->Shape()[0]);
@@ -178,18 +194,6 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   }
 
   return Status::OK();
-}
-
-bool cmp(std::vector<int32_t> &a, std::vector<int32_t> &b) {
-  if(a[3] != b[3]){
-    return a[3] < b[3];
-  } else if(a[0] != b[0]){
-    return a[0] < b[0];
-  } else if(a[1] != b[1]){
-    return a[1] < b[1];
-  } else {
-    return a[2] < b[2];
-  }
 }
 
 template <typename T>
@@ -349,7 +353,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   //int64_t kernel_volume = kernel_shape[0] * kernel_shape[1] * kernel_shape[2];
   std::vector<int64_t> nbsizes_shape({kernel_volume});
   Nbsizes = context->Output(4, nbsizes_shape);
-  std::cout << "debug-zxr: parse nbsizes" << std::endl;
+  // std::cout << "debug-zxr: parse nbsizes" << std::endl;
   int* nbsizes_data = Nbsizes->template MutableData<int32_t>();
   for (size_t i = 0; i < kernel_volume; i++){
     size_t sum = 0;
@@ -372,7 +376,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
 
 
   //parse nbmaps
-  std::cout << "debug-zxr: parse nbmaps" << std::endl;
+  // std::cout << "debug-zxr: parse nbmaps" << std::endl;
   int64_t sum_nbmaps = 0;
   for(size_t i = 0; i < kernel_volume; i++){
     sum_nbmaps += nbsizes_data[i];
@@ -394,7 +398,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   // for (size_t i = 0; i < sum_nbmaps; i++){
   //   std::cout << nbmaps_data[i * 2] << " " << nbmaps_data[i * 2 + 1] << std::endl;
   // }
-  std::cout << "debug-zxr: end buildkmap" << std::endl;
+  // std::cout << "debug-zxr: end buildkmap" << std::endl;
   return Status::OK();
 }
 
@@ -410,12 +414,12 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &Output
   const int* nbsizes_data = Nbsizes->template Data<int32_t>();
   size_t kernel_volume = conv_attrs_.kernel_shape_[0] * conv_attrs_.kernel_shape_[1] * conv_attrs_.kernel_shape_[2];
 
-  std::cout << "debug-zxr: start convolution_forward_cpu" << std::endl;
+  // std::cout << "debug-zxr: start convolution_forward_cpu" << std::endl;
   convolution_forward_cpu(input_feats_data, output_feats_data, weight_data, nbmaps_data, nbsizes_data, conv_attrs_.transposed == 1, 
                           static_cast<const int>(Weight->Shape()[1]), static_cast<const int>(Weight->Shape()[2]), 
                           static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), 
                           static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());                   
-  std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
+  // std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
   return Status::OK();
 }
 
@@ -440,6 +444,8 @@ Status SpConv3d<T>::PropagateTensorDataFromInputToOutput(const Tensor* X, Tensor
   }
   return Status::OK();
 }
+
+
 
 }  // namespace systolic
 }  // namespace onnxruntime

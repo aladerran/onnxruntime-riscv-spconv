@@ -571,9 +571,11 @@ void cpu_kernel_hash_wrapper(const int N, const int K, const int *data,
                 cur_coord[j] = data[i * 4 + j] + kernel_offset[k * 3 + j];
             }
             cur_coord[3] = data[i * 4 + 3];
+            //14695981039346656037 = 20921*465383*1509404459
             uint64_t hash = 14695981039346656037UL;
             for (int j = 0; j < 4; j++) {
                 hash ^= (unsigned int)cur_coord[j];
+                // 1099511628211 is prime
                 hash *= 1099511628211UL;
             }
             hash = (hash >> 60) ^ (hash & 0xFFFFFFFFFFFFFFF);

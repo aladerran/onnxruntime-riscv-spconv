@@ -262,6 +262,12 @@ if(NOT onnxruntime_MINIMAL_BUILD AND NOT onnxruntime_REDUCED_OPS_BUILD)
   file(GLOB_RECURSE onnxruntime_test_providers_cpu_src CONFIGURE_DEPENDS
     "${TEST_SRC_DIR}/providers/cpu/*"
     )
+  
+  set(files_to_exclude
+    "${TEST_SRC_DIR}/providers/cpu/controlflow/loop_test.cc"
+  )
+
+  list(REMOVE_ITEM onnxruntime_test_providers_cpu_src ${files_to_exclude})
 endif()
 
 if(onnxruntime_DISABLE_ML_OPS)

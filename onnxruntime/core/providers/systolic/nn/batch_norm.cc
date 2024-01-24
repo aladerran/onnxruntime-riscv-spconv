@@ -173,50 +173,50 @@ Status BatchNorm<T>::Compute(OpKernelContext* p_op_kernel_context) const {
   T* new_scale_pointer = new_scale.data();
   T* new_bias_pointer = new_bias.data();
   if (is_spatial_) {  // spatial == 1
-    // std::vector<int64_t> bias_shape({static_cast<size_t>(sample_size)});
-    // Tensor bias_tensor = Tensor(DataTypeImpl::GetType<T>(), bias_shape, alloc);
-    std::vector<T> bias_vec(sample_size);
-    for (size_t nc = 0; nc < N * C; ++nc) {
-      SystolicMultiply(static_cast<const SystolicExecutionProvider*>(
-                    this->Info().GetExecutionProvider())->GetAcceleratorMode(),
-                    /* relu= */ false, 1, sample_size, 1,
-                    new_scale_pointer + (nc % C), 
-                    X_pointer + nc * sample_size, 
-                    Y_pointer + nc * sample_size,
-                    /*real_multiplier=*/ 1, /* bias= */nullptr);
-      std::fill(bias_vec.begin(), bias_vec.end(), new_bias(nc % C));
-      SystolicAdd(static_cast<const SystolicExecutionProvider*>(
-                    this->Info().GetExecutionProvider())->GetAcceleratorMode(),
-                    /* relu= */ false,
-                    Y_pointer + nc * sample_size, 1.0f, 
-                    bias_vec.data(), 1.0f, 
-                    Y_pointer + nc * sample_size, 1.0f, sample_size);
-    }
-
-    // std::vector<T> bias_vec(C * sample_size);
-    // std::vector<T> scale_vec(C * C, 0);
-    // for (size_t i = 0; i < C; ++i) {
-    //   scale_vec[i * C + i] = new_scale(i);
-    // }
-    // for (size_t i = 0; i < C; ++i) {
-    //   std::fill(bias_vec.begin() + i * sample_size, bias_vec.begin() + i * sample_size + sample_size, new_bias(i));
-    // }
-    // for (size_t n = 0; n < N; ++n) {
+    // // std::vector<int64_t> bias_shape({static_cast<size_t>(sample_size)});
+    // // Tensor bias_tensor = Tensor(DataTypeImpl::GetType<T>(), bias_shape, alloc);
+    // std::vector<T> bias_vec(sample_size);
+    // for (size_t nc = 0; nc < N * C; ++nc) {
     //   SystolicMultiply(static_cast<const SystolicExecutionProvider*>(
     //                 this->Info().GetExecutionProvider())->GetAcceleratorMode(),
-    //                 /* relu= */ false, C, sample_size, C,
-    //                 scale_vec.data(), 
-    //                 X_pointer + n * C * sample_size, 
-    //                 Y_pointer + n * C * sample_size,
+    //                 /* relu= */ false, 1, sample_size, 1,
+    //                 new_scale_pointer + (nc % C), 
+    //                 X_pointer + nc * sample_size, 
+    //                 Y_pointer + nc * sample_size,
     //                 /*real_multiplier=*/ 1, /* bias= */nullptr);
-
+    //   std::fill(bias_vec.begin(), bias_vec.end(), new_bias(nc % C));
     //   SystolicAdd(static_cast<const SystolicExecutionProvider*>(
     //                 this->Info().GetExecutionProvider())->GetAcceleratorMode(),
     //                 /* relu= */ false,
-    //                 Y_pointer + n * C * sample_size, 1.0f, 
+    //                 Y_pointer + nc * sample_size, 1.0f, 
     //                 bias_vec.data(), 1.0f, 
-    //                 Y_pointer + n * C * sample_size, 1.0f, C * sample_size);
+    //                 Y_pointer + nc * sample_size, 1.0f, sample_size);
     // }
+
+    std::vector<T> bias_vec(C * sample_size);
+    std::vector<T> scale_vec(C * C, 0);
+    for (size_t i = 0; i < C; ++i) {
+      scale_vec[i * C + i] = new_scale(i);
+    }
+    for (size_t i = 0; i < C; ++i) {
+      std::fill(bias_vec.begin() + i * sample_size, bias_vec.begin() + i * sample_size + sample_size, new_bias(i));
+    }
+    for (size_t n = 0; n < N; ++n) {
+      SystolicMultiply(static_cast<const SystolicExecutionProvider*>(
+                    this->Info().GetExecutionProvider())->GetAcceleratorMode(),
+                    /* relu= */ false, C, sample_size, C,
+                    scale_vec.data(), 
+                    X_pointer + n * C * sample_size, 
+                    Y_pointer + n * C * sample_size,
+                    /*real_multiplier=*/ 1, /* bias= */nullptr);
+
+      SystolicAdd(static_cast<const SystolicExecutionProvider*>(
+                    this->Info().GetExecutionProvider())->GetAcceleratorMode(),
+                    /* relu= */ false,
+                    Y_pointer + n * C * sample_size, 1.0f, 
+                    bias_vec.data(), 1.0f, 
+                    Y_pointer + n * C * sample_size, 1.0f, C * sample_size);
+    }
 
     // for (size_t nc = 0; nc < N * C; ++nc) {
     //   Y_arr.col(nc) = X_arr.col(nc) * new_scale(nc % C) + new_bias(nc % C);

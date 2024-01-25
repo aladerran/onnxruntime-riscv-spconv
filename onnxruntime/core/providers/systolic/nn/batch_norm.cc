@@ -177,20 +177,14 @@ Status BatchNorm<T>::Compute(OpKernelContext* p_op_kernel_context) const {
     // Tensor bias_tensor = Tensor(DataTypeImpl::GetType<T>(), bias_shape, alloc);
     std::vector<T> bias_vec(sample_size);
     for (size_t nc = 0; nc < N * C; ++nc) {
+      std::fill(bias_vec.begin(), bias_vec.end(), new_bias(nc % C));
       SystolicMultiply(static_cast<const SystolicExecutionProvider*>(
                     this->Info().GetExecutionProvider())->GetAcceleratorMode(),
                     /* relu= */ false, 1, sample_size, 1,
                     new_scale_pointer + (nc % C), 
                     X_pointer + nc * sample_size, 
                     Y_pointer + nc * sample_size,
-                    /*real_multiplier=*/ 1, /* bias= */nullptr);
-      std::fill(bias_vec.begin(), bias_vec.end(), new_bias(nc % C));
-      SystolicAdd(static_cast<const SystolicExecutionProvider*>(
-                    this->Info().GetExecutionProvider())->GetAcceleratorMode(),
-                    /* relu= */ false,
-                    Y_pointer + nc * sample_size, 1.0f, 
-                    bias_vec.data(), 1.0f, 
-                    Y_pointer + nc * sample_size, 1.0f, sample_size);
+                    /*real_multiplier=*/ 1, bias_vec.data());
     }
 
     // std::vector<T> bias_vec(C * sample_size);
@@ -208,14 +202,7 @@ Status BatchNorm<T>::Compute(OpKernelContext* p_op_kernel_context) const {
     //                 scale_vec.data(), 
     //                 X_pointer + n * C * sample_size, 
     //                 Y_pointer + n * C * sample_size,
-    //                 /*real_multiplier=*/ 1, /* bias= */nullptr);
-
-    //   SystolicAdd(static_cast<const SystolicExecutionProvider*>(
-    //                 this->Info().GetExecutionProvider())->GetAcceleratorMode(),
-    //                 /* relu= */ false,
-    //                 Y_pointer + n * C * sample_size, 1.0f, 
-    //                 bias_vec.data(), 1.0f, 
-    //                 Y_pointer + n * C * sample_size, 1.0f, C * sample_size);
+    //                 /*real_multiplier=*/ 1, bias_vec.data());
     // }
 
     // for (size_t nc = 0; nc < N * C; ++nc) {

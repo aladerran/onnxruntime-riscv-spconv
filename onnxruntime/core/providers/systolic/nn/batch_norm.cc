@@ -208,14 +208,7 @@ Status BatchNorm<T>::Compute(OpKernelContext* p_op_kernel_context) const {
                     scale_vec.data(), 
                     X_pointer + n * C * sample_size, 
                     Y_pointer + n * C * sample_size,
-                    /*real_multiplier=*/ 1, /* bias= */nullptr);
-
-      SystolicAdd(static_cast<const SystolicExecutionProvider*>(
-                    this->Info().GetExecutionProvider())->GetAcceleratorMode(),
-                    /* relu= */ false,
-                    Y_pointer + n * C * sample_size, 1.0f, 
-                    bias_vec.data(), 1.0f, 
-                    Y_pointer + n * C * sample_size, 1.0f, C * sample_size);
+                    /*real_multiplier=*/ 1, bias_vec.data());
     }
 
     // for (size_t nc = 0; nc < N * C; ++nc) {

@@ -21,9 +21,6 @@
 #include <hwacha/hwacha_provider_factory.h>
 #endif
 
-#include "stb_image.h"
-
-#include "tensor_helper.h"
 #include "cmd_args.h"
 
 
@@ -127,7 +124,7 @@ unsigned long long read_cycle() {
 }
 
 
-void test_infer(const std::string& preprocess, Ort::Session& session,
+void test_infer(Ort::Session& session,
                 const std::vector<const char*>& input_node_names,
                 const std::vector<std::vector<int64_t>>& input_node_shapes,
                 const std::vector<size_t>& input_node_sizes,
@@ -322,8 +319,7 @@ int main(int argc, char* argv[]) {
     printf("]\n");
   }
 
-  test_infer( cmd["preprocess"].as<std::string>(),
-             session, input_node_names, input_node_shapes, input_node_sizes, output_node_names);
+  test_infer(session, input_node_names, input_node_shapes, input_node_sizes, output_node_names);
 
   return 0;
 }

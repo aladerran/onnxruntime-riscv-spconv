@@ -4,11 +4,8 @@ CFLAGS = -march=rv64imafdc -mabi=lp64d -Wno-error=attributes \
   	-latomic -static
 CDEFS = -Dgsl_CONFIG_CONTRACT_VIOLATION_THROWS ${extra_defs}
 
-stb_image.o:
-	$(CXX) -c -o src/stb_image.o src/stb_image.cpp $(CFLAGS) $(CDEFS)
-
-ort_test: stb_image.o
-	$(CXX) -o ort_test src/runner.cpp src/stb_image.o $(CDEFS) \
+ort_test:
+	$(CXX) -o ort_test src/runner.cpp $(CDEFS) \
 				-I ${root_path}/include/onnxruntime/core/session \
 				-I ${root_path}/include/onnxruntime/core/providers \
 				-I ${root_path}/cmake/external/cxxopts/include \

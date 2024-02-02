@@ -24,12 +24,12 @@ cd ~/firesim/sw/firesim-software
 
 firesim launchrunfarm && firesim infrasetup && firesim runworkload && firesim terminaterunfarm --forceterminate
 
-exit 0
+# exit 0
 
 cd -
 
 rm -f *.csv *.onnx
-cp -r data/10k/* .
+cp -r data/1k/* .
 
 
 cd ~/firesim/sw/firesim-software
@@ -42,7 +42,7 @@ firesim launchrunfarm && firesim infrasetup && firesim runworkload && firesim te
 cd -
 
 rm -f *.csv *.onnx
-cp -r data/20k/* .
+cp -r data/1k_2/* .
 
 
 cd ~/firesim/sw/firesim-software
@@ -55,7 +55,7 @@ firesim launchrunfarm && firesim infrasetup && firesim runworkload && firesim te
 cd -
 
 rm -f *.csv *.onnx
-cp -r data/50k/* .
+cp -r data/1k_4/* .
 
 
 cd ~/firesim/sw/firesim-software
@@ -68,7 +68,7 @@ firesim launchrunfarm && firesim infrasetup && firesim runworkload && firesim te
 cd -
 
 rm -f *.csv *.onnx
-cp -r data/100k/* .
+cp -r data/1k_8/* .
 
 
 cd ~/firesim/sw/firesim-software

@@ -1,1 +1,1 @@
-# torchsparseOnnxruntimeRiscvRunner
+# Sparse Convolution Network (SCN) Runner

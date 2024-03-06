@@ -14,6 +14,7 @@ inline unsigned long long read_cycles() {
 }
 
 unsigned long long fused_cycles = 0;
+int fused_count = 0;
 
 template <typename T>
 class FusedBatchNorm final : public BatchNorm<T> {
@@ -154,8 +155,10 @@ class FusedBatchNorm final : public BatchNorm<T> {
     }
 
     fused_cycles += read_cycles() - fused_start;
-    std::cout << "Fused BatchNorm cycles: " << fused_cycles << std::endl;
-
+    fused_count++;
+    if(fused_count == 26){
+      std::cout << "Fused BatchNorm cycles: " << fused_cycles << std::endl;
+    }
     return Status::OK();
   }
 

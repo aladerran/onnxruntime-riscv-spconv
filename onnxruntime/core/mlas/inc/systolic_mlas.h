@@ -128,15 +128,26 @@ MLASCALL(const float* in_feat, float* out_feat,
 void hash_cpu
 MLASCALL(const int *idx, int64_t *out, const int N);
 
+void hash_cpu_batch
+MLASCALL(const int *idx, uint32_t *out, const int N, const int B);
+
 void kernel_hash_cpu
 MLASCALL(const int *idx, const int *kernel_offset,
           int64_t *out, const int N, const int K);
+
+void kernel_hash_cpu_batch
+MLASCALL(const int *idx, const int *kernel_offset,
+          uint32_t *out, const int N, const int K, const int B);
 
 void hash_query_cpu
 MLASCALL(const int64_t* hash_query, const int64_t* hash_target,
           const int64_t* idx_target, int64_t* out, const int n, const int n1);
 
-void print_cycles
+void hash_query_cpu_uint32t
+MLASCALL(const uint32_t* hash_query, const uint32_t* hash_target,
+          const uint32_t* idx_target, uint32_t* out, const int n, const int n1);
+
+void print_cycles_backend
 MLASCALL();
 
 unsigned long long read_cycles

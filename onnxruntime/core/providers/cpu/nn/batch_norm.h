@@ -184,8 +184,9 @@ class BatchNorm : public OpKernel {
     }
 
     norm_cycles += read_cycles() - norm_start;
-    std::cout << "BatchNormolization cycles: " << norm_cycles << std::endl;
-
+    if(p_op_kernel_context->GetNodeName() == "/fuse/resblock2/main/batchnorm2/norm_3/BatchNormalization"){
+      std::cout << "BatchNormolization cycles: " << norm_cycles << std::endl;
+    }
     return Status::OK();
   }
 

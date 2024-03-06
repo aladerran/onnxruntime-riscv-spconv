@@ -422,22 +422,20 @@ void matmul_type_dispatch(tiled_matmul_type_t tiled_matmul_type,
             matmul_gemmini(A, B, C, M, N, K, CPU);
             break;
         case OS:
-            std::cout << "Using Gemmini OS Matmul!" << std::endl;
+            // std::cout << "Using Gemmini OS Matmul!" << std::endl;
             matmul_gemmini(A, B, C, M, N, K, OS);
             break;
         case WS:
-            std::cout << "Using Gemmini WS Matmul!" << std::endl;
+            // std::cout << "Using Gemmini WS Matmul!" << std::endl;
             matmul_gemmini(A, B, C, M, N, K, WS);
             break;
         default:
             throw std::invalid_argument("Invalid matmul type");
     }
 
-    auto matmul_end = read_cycles();
+    matmul_cycles += read_cycles() - matmul_start;
 
-    matmul_cycles += matmul_end - matmul_start;
-
-    std::cout << "Using accelerated matmul with dimensions (" << M << ", " << N << ", " << K << ")" << std::endl;
+    // std::cout << "Using accelerated matmul with dimensions (" << M << ", " << N << ", " << K << ")" << std::endl;
 
 }
 
@@ -458,9 +456,7 @@ void scatter_cpu(const int n_in, const int n_out, const int c,
         }
     }
 
-    auto scatter_end = read_cycles();
-
-    scatter_cycles += scatter_end - scatter_start;
+    scatter_cycles += read_cycles() - scatter_start;
 
 }
 
@@ -481,9 +477,7 @@ void gather_cpu(const int n_k, const int n_in, const int c,
         }
     }
 
-    auto gather_end = read_cycles();
-
-    gather_cycles += gather_end - gather_start;
+    gather_cycles += read_cycles() - gather_start;
 
 }
 
@@ -579,14 +573,39 @@ void convolution_forward_cpu(const float* in_feat,
 void cpu_hash_wrapper(const int N, const int *data, int64_t *out) {
     for (int i = 0; i < N; i++) {
         uint64_t hash = 14695981039346656037UL;
-        // for (int j = 0; j < 4; j++) {
-        for (int j = 0; j < 3; j++) {
+        for (int j = 0; j < 4; j++) {
             hash ^= (unsigned int)data[4 * i + j];
             hash *= 1099511628211UL;
         }
         hash = (hash >> 60) ^ (hash & 0xFFFFFFFFFFFFFFF);
         out[i] = hash;
     }
+}
+
+void cpu_hash_32bit_wrapper(const int N, const int *data, uint32_t *out) {
+    for (int i = 0; i < N; i++) {
+        uint32_t hash = 2166136261U; // 32-bit FNV offset basis
+        for (int j = 0; j < 3; j++) {
+            hash ^= (unsigned int)data[4 * i + j];
+            hash *= 16777619U; // 32-bit FNV prime
+        }
+        hash = (hash >> 28) ^ (hash & 0xFFFFFFF);
+        out[i] = hash;
+    }
+}
+
+void hash_cpu(const int *idx, int64_t *out, const int N) {
+    auto hash_start = read_cycles();
+    cpu_hash_wrapper(N, idx, out);
+    hash_cycles += read_cycles() - hash_start;
+}
+
+void hash_cpu_batch(const int *idx, uint32_t *out, const int N, const int B) {
+    auto hash_start = read_cycles();
+    for (int b = 0; b < B; b++) {
+        cpu_hash_32bit_wrapper(N, idx + b * N * 4, out + b * N);
+    }
+    hash_cycles += read_cycles() - hash_start;
 }
 
 
@@ -598,10 +617,9 @@ void cpu_kernel_hash_wrapper(const int N, const int K, const int *data,
             for (int j = 0; j < 3; j++) {
                 cur_coord[j] = data[i * 4 + j] + kernel_offset[k * 3 + j];
             }
-            // cur_coord[3] = data[i * 4 + 3];
+            cur_coord[3] = data[i * 4 + 3];
             uint64_t hash = 14695981039346656037UL;
-            // for (int j = 0; j < 4; j++) {
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < 4; j++) {
                 hash ^= (unsigned int)cur_coord[j];
                 hash *= 1099511628211UL;
             }
@@ -611,12 +629,23 @@ void cpu_kernel_hash_wrapper(const int N, const int K, const int *data,
     }
 }
 
-
-void hash_cpu(const int *idx, int64_t *out, const int N) {
-    auto hash_start = read_cycles();
-    cpu_hash_wrapper(N, idx, out);
-    auto hash_end = read_cycles();
-    hash_cycles += hash_end - hash_start;
+void cpu_kernel_hash_32bit_wrapper(const int N, const int K, const int *data,
+                                   const int *kernel_offset, uint32_t *out) {
+    for (int k = 0; k < K; k++) {
+        for (int i = 0; i < N; i++) {
+            int cur_coord[3];
+            for (int j = 0; j < 3; j++) {
+                cur_coord[j] = data[i * 4 + j] + kernel_offset[k * 3 + j];
+            }
+            uint32_t hash = 2166136261U; // 32-bit FNV offset basis
+            for (int j = 0; j < 3; j++) {
+                hash ^= (unsigned int)cur_coord[j];
+                hash *= 16777619U; // 32-bit FNV prime
+            }
+            hash = (hash >> 28) ^ (hash & 0xFFFFFFF);
+            out[k * N + i] = hash;
+        }
+    }
 }
 
 
@@ -624,8 +653,16 @@ void kernel_hash_cpu(const int *idx, const int *kernel_offset,
                      int64_t *out, const int N, const int K) {
     auto hash_start = read_cycles();
     cpu_kernel_hash_wrapper(N, K, idx, kernel_offset, out);
-    auto hash_end = read_cycles();
-    hash_kernel_cycles += hash_end - hash_start;
+    hash_kernel_cycles += read_cycles() - hash_start;
+}
+
+void kernel_hash_cpu_batch(const int *idx, const int *kernel_offset,
+                           uint32_t *out, const int N, const int K, const int B) {
+    auto hash_start = read_cycles();
+    for (int b = 0; b < B; b++) {
+        cpu_kernel_hash_32bit_wrapper(N, K, idx + b * N * 4, kernel_offset, out + b * N * K);
+    }
+    hash_kernel_cycles += read_cycles() - hash_start;
 }
 
 
@@ -651,14 +688,33 @@ void hash_query_cpu(const int64_t* hash_query, const int64_t* hash_target,
 }
 
 
-void print_cycles() {
+void hash_query_cpu_uint32t(const uint32_t* hash_query, const uint32_t* hash_target,
+                            const uint32_t* idx_target, uint32_t* out, const int n, const int n1) {
+    auto hash_query_start = read_cycles();
+    google::dense_hash_map<uint32_t, uint32_t> hashmap;
+    hashmap.set_empty_key(0);
+    
+    for (int idx = 0; idx < n; idx++) {
+        uint32_t key = hash_target[idx];
+        uint32_t val = idx_target[idx] + 1;
+        hashmap.insert(std::make_pair(key, val));
+    }
+    for (int idx = 0; idx < n1; idx++) {
+        uint32_t key = hash_query[idx];
+        google::dense_hash_map<uint32_t, uint32_t>::iterator iter = hashmap.find(key);
+        if (iter != hashmap.end()) {
+            out[idx] = iter->second;
+        }
+    }
+    hash_query_cycles += read_cycles() - hash_query_start;
+}
 
+
+void print_cycles_backend() {
     std::cout << "Scatter cycles: " << scatter_cycles << std::endl;
     std::cout << "Matmul cycles: " << matmul_cycles << std::endl;
     std::cout << "Gather cycles: " << gather_cycles << std::endl;
     std::cout << "Hash cycles: " << hash_cycles << std::endl;
     std::cout << "Hash kernel cycles: " << hash_kernel_cycles << std::endl;
     std::cout << "Hash query cycles: " << hash_query_cycles << std::endl;
-
-    std::cout << "Data movement cycles: " << scatter_cycles + gather_cycles << std::endl;
 }

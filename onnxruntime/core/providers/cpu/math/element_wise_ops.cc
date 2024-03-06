@@ -448,9 +448,10 @@ Status Add<T>::Compute(OpKernelContext* context) const {
 
   UntypedBroadcastTwo(*context, funcs, 1.0f);
 
-  unsigned long long add_end = read_cycles();
-  add_cycles += add_end - add_start;
-  std::cout << "Add cycles: " << add_cycles << std::endl;
+  add_cycles += read_cycles() - add_start;
+  if(context->GetNodeName() == "/fuse/resblock2_3/Add"){
+    std::cout << "Add cycles: " << add_cycles << std::endl;
+  }
   return Status::OK();
 }
 

@@ -11,6 +11,7 @@
 
 // In the header file
 static unsigned long long relu_cycles;
+static int relu_count = 0;
 
 namespace onnxruntime {
 
@@ -133,7 +134,10 @@ struct Relu : public ElementWiseRangedTransform<T> {
     EigenVectorArrayMap<T> ym(output_ptr, len);
     ym = xm.cwiseMax(0);
     relu_cycles += read_cycles() - relu_start;
-    std::cout << "Relu cycles: " << relu_cycles << std::endl;
+    relu_count++;
+    if(relu_count == 16){
+      std::cout << "Relu cycles: " << relu_cycles << std::endl;
+    }
   }
 };
 

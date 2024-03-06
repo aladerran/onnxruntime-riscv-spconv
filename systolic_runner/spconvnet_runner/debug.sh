@@ -14,7 +14,7 @@ cd -
 
 # rm -f *.log
 rm -f *.csv *.onnx
-cp -r data/1k_2/* .
+cp -r data/1k/* .
 
 {
   echo ===================== Runtime begins =====================

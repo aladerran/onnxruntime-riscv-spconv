@@ -13,8 +13,8 @@ cd -
 # ./build.sh --config=Release --parallel
 ./build.sh --config=Release --parallel --for_firesim
 
-# rm -f *.csv *.onnx
-# cp -r data/10k/* .
+rm -f *.csv *.onnx *.log
+cp -r data/1k_4/* .
 
 
 cd ~/firesim/sw/firesim-software
@@ -24,7 +24,7 @@ cd ~/firesim/sw/firesim-software
 
 firesim launchrunfarm && firesim infrasetup && firesim runworkload && firesim terminaterunfarm --forceterminate
 
-# exit 0
+exit 0
 
 cd -
 

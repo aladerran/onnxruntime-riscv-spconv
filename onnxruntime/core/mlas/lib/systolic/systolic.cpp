@@ -387,9 +387,53 @@ unsigned long long read_cycles()
  ==================================================================================================
  */
 
+
+/**
+ * Adds two matrices elementwise
+ */
+void SystolicAdd_FP32(char accelerator_mode __attribute__((unused)), bool relu, const elem_t* A, float A_scale, const elem_t* B,
+                 float B_scale,
+                 elem_t* C, float C_scale, int dim) {
+#ifndef FOR_FIRESIM
+//   printf("Called into systolic add (FP32)\n");
+  if (relu) {
+    // printf("Called into systolic relu\n");
+  }
+#endif
+  // To most efficiently use systolic, instead of using 1xdim, we use 16xResizedDim.
+  // Systolic can load multiple blocks in a given row
+
+  // Note that it's more accurate to use A_scale/C_scale and B_scale/C_scale as the A, B scales (with C_scale = 1)
+  // Since that way we don't blow up rounding error by dividing by C_scale
+
+  // Equivalent to:
+  // for (int i = 0; i < dim; i++) {
+  //   int32_t tmp1 = (int) MVIN_SCALE(*A, A_scale/C_scale);
+  //   int32_t tmp2 = (int) MVIN_SCALE(*B, B_scale/C_scale);
+  //   *C = scale_and_sat(tmp1 + tmp2, relu ? RELU : 0, 1, 0);
+
+  //   A++;
+  //   B++;
+  //   C++;
+  // }
+
+  int resizedDim = dim - dim % DIM;
+  tiled_resadd_auto(DIM, resizedDim / DIM, A_scale / C_scale, B_scale / C_scale,
+                    /*C_scale= */ 1, A, B, C, relu, get_accelerator_mode(accelerator_mode));
+  if (dim % DIM > 0) {
+#ifndef FOR_FIRESIM
+    printf("Some extra leftover\n");
+#endif
+    tiled_resadd_auto(1, dim % DIM, A_scale / C_scale, B_scale / C_scale,
+                      /*C_scale= */ 1, A + resizedDim, B + resizedDim, C + resizedDim, relu, get_accelerator_mode(accelerator_mode));
+  }
+}
+
+
 unsigned long long gather_cycles;
 unsigned long long scatter_cycles;
 unsigned long long matmul_cycles;
+unsigned long long buffer_cycles;
 unsigned long long hash_cycles;
 unsigned long long hash_kernel_cycles;
 unsigned long long hash_query_cycles;
@@ -439,7 +483,6 @@ void matmul_type_dispatch(tiled_matmul_type_t tiled_matmul_type,
 
 }
 
-
 void scatter_cpu(const int n_in, const int n_out, const int c,
                  const float *in_feat, float *out_feat, const int *kmap,
                  const bool transpose) {
@@ -459,7 +502,6 @@ void scatter_cpu(const int n_in, const int n_out, const int c,
     scatter_cycles += read_cycles() - scatter_start;
 
 }
-
 
 void gather_cpu(const int n_k, const int n_in, const int c,
                 const float *in_feat, float *out_feat, const int *kmap,
@@ -481,7 +523,6 @@ void gather_cpu(const int n_k, const int n_in, const int c,
 
 }
 
-
 void convolution_forward_cpu(const float* in_feat,
                              float* out_feat,
                              const float* kernel,
@@ -494,6 +535,8 @@ void convolution_forward_cpu(const float* in_feat,
                              const int out_nrows,
                              const int kernel_volume,
                              char accelerator_mode) {
+
+    auto buffer_start = read_cycles();
 
     tiled_matmul_type_t tiled_matmul_type = get_accelerator_mode(accelerator_mode);
 
@@ -530,6 +573,8 @@ void convolution_forward_cpu(const float* in_feat,
                               neighbor_offset + kernel_volume);
     }
 
+    // std::cout << "in_buffer_size: " << in_buffer_size << std::endl;
+
     std::vector<float> in_buffer(in_buffer_size * in_channels, 0);
     std::vector<float> out_buffer(in_buffer_size * out_channels, 0);
     int cur_offset = 0;
@@ -565,7 +610,31 @@ void convolution_forward_cpu(const float* in_feat,
                     out_feat,
                     neighbor_map + cur_offset, transpose);
         cur_offset += 2 * neighbor_offset[i];
+
+        buffer_cycles += read_cycles() - buffer_start;
     }
+
+}
+
+void convolution_forward_cpu_fixed_buffer(const float* in_feat,
+                                          float* out_feat,
+                                          const float* kernel,
+                                          const int* neighbor_map,
+                                          const int* neighbor_offset,
+                                          const bool transpose,
+                                          const int in_channels,
+                                          const int out_channels,
+                                          const int in_nrows,
+                                          const int out_nrows,
+                                          const int kernel_volume,
+                                          char accelerator_mode) {
+
+    auto fix_buffer_start = read_cycles();
+
+    convolution_forward_cpu(in_feat, out_feat, kernel, neighbor_map, neighbor_offset, transpose,
+                            in_channels, out_channels, in_nrows, out_nrows, kernel_volume, accelerator_mode);
+
+    buffer_cycles += read_cycles() - fix_buffer_start;
 
 }
 
@@ -600,11 +669,9 @@ void hash_cpu(const int *idx, int64_t *out, const int N) {
     hash_cycles += read_cycles() - hash_start;
 }
 
-void hash_cpu_batch(const int *idx, uint32_t *out, const int N, const int B) {
+void hash_cpu_uint32t(const int *idx, uint32_t *out, const int N) {
     auto hash_start = read_cycles();
-    for (int b = 0; b < B; b++) {
-        cpu_hash_32bit_wrapper(N, idx + b * N * 4, out + b * N);
-    }
+    cpu_hash_32bit_wrapper(N, idx, out);
     hash_cycles += read_cycles() - hash_start;
 }
 
@@ -648,7 +715,6 @@ void cpu_kernel_hash_32bit_wrapper(const int N, const int K, const int *data,
     }
 }
 
-
 void kernel_hash_cpu(const int *idx, const int *kernel_offset,
                      int64_t *out, const int N, const int K) {
     auto hash_start = read_cycles();
@@ -656,12 +722,10 @@ void kernel_hash_cpu(const int *idx, const int *kernel_offset,
     hash_kernel_cycles += read_cycles() - hash_start;
 }
 
-void kernel_hash_cpu_batch(const int *idx, const int *kernel_offset,
-                           uint32_t *out, const int N, const int K, const int B) {
+void kernel_hash_cpu_uint32t(const int *idx, const int *kernel_offset,
+                             uint32_t *out, const int N, const int K) {
     auto hash_start = read_cycles();
-    for (int b = 0; b < B; b++) {
-        cpu_kernel_hash_32bit_wrapper(N, K, idx + b * N * 4, kernel_offset, out + b * N * K);
-    }
+    cpu_kernel_hash_32bit_wrapper(N, K, idx, kernel_offset, out);
     hash_kernel_cycles += read_cycles() - hash_start;
 }
 
@@ -714,6 +778,7 @@ void print_cycles_backend() {
     std::cout << "Scatter cycles: " << scatter_cycles << std::endl;
     std::cout << "Matmul cycles: " << matmul_cycles << std::endl;
     std::cout << "Gather cycles: " << gather_cycles << std::endl;
+    std::cout << "Buffer cycles: " << buffer_cycles- scatter_cycles - matmul_cycles - gather_cycles << std::endl;
     std::cout << "Hash cycles: " << hash_cycles << std::endl;
     std::cout << "Hash kernel cycles: " << hash_kernel_cycles << std::endl;
     std::cout << "Hash query cycles: " << hash_query_cycles << std::endl;

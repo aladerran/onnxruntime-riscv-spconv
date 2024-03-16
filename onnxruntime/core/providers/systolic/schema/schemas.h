@@ -552,8 +552,24 @@ void RegisterSystolicSchemas() {
         }
       });
 
-      
-      ONNX_SYSTOLIC_OPERATOR_SCHEMA(SpConv3d)
+  ONNX_SYSTOLIC_OPERATOR_SCHEMA(SystolicAddRelu)
+      .SinceVersion(14)
+      .SetDoc("Addition for Systolic")
+      .Input(0, "A", "First operand.", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(1, "B", "Second operand.", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Output(0, "C", "Result, has same element type as two inputs", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .TypeConstraint("T", {"tensor(float)", "tensor(float)", "tensor(float)"}, "Constrain input and output types to float tensors.")
+      .TypeAndShapeInferenceFunction([](InferenceContext& ctx) {
+        propagateElemTypeFromInputToOutput(ctx, 0, 0);
+        if (hasNInputShapes(ctx, 2))
+          bidirectionalBroadcastShapeInference(
+              ctx.getInputType(0)->tensor_type().shape(),
+              ctx.getInputType(1)->tensor_type().shape(),
+              *ctx.getOutputType(0)->mutable_tensor_type()->mutable_shape());
+      });
+
+
+  ONNX_SYSTOLIC_OPERATOR_SCHEMA(SpConv3d)
       .SinceVersion(14)
       .SetDoc("SpConv3d Demo")
       .Input(0, "0", "InputCoords", "I", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)

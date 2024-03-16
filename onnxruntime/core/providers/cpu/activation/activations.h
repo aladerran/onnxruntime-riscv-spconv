@@ -135,7 +135,8 @@ struct Relu : public ElementWiseRangedTransform<T> {
     ym = xm.cwiseMax(0);
     relu_cycles += read_cycles() - relu_start;
     relu_count++;
-    if(relu_count == 16){
+    if(relu_count > 25){
+      std::cout << "==================" << std::endl;
       std::cout << "Relu cycles: " << relu_cycles << std::endl;
     }
   }

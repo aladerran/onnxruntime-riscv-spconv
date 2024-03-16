@@ -117,7 +117,20 @@ void SystolicConvBackpropFilter(char accelerator_mode, int batch_size, int in_di
 
 // Add sparse conv backend
 
+void SystolicAdd_FP32
+MLASCALL(char accelerator_mode, bool relu, const float* in1, float in1_scale, const float* in2,
+         float in2_scale,
+         float* out, float out_scale, int dim);
+
 void convolution_forward_cpu
+MLASCALL(const float* in_feat, float* out_feat,
+          const float* kernel, const int* neighbor_map,
+          const int* neighbor_offset, const bool transpose,
+          const int in_channels, const int out_channels,
+          const int in_nrows, const int out_nrows,
+          const int kernel_volume, char accelerator_mode);
+
+void convolution_forward_cpu_fixed_buffer
 MLASCALL(const float* in_feat, float* out_feat,
           const float* kernel, const int* neighbor_map,
           const int* neighbor_offset, const bool transpose,
@@ -128,16 +141,16 @@ MLASCALL(const float* in_feat, float* out_feat,
 void hash_cpu
 MLASCALL(const int *idx, int64_t *out, const int N);
 
-void hash_cpu_batch
-MLASCALL(const int *idx, uint32_t *out, const int N, const int B);
+void hash_cpu_uint32t
+MLASCALL(const int *idx, uint32_t *out, const int N);
 
 void kernel_hash_cpu
 MLASCALL(const int *idx, const int *kernel_offset,
           int64_t *out, const int N, const int K);
 
-void kernel_hash_cpu_batch
+void kernel_hash_cpu_uint32t
 MLASCALL(const int *idx, const int *kernel_offset,
-          uint32_t *out, const int N, const int K, const int B);
+          uint32_t *out, const int N, const int K);
 
 void hash_query_cpu
 MLASCALL(const int64_t* hash_query, const int64_t* hash_target,

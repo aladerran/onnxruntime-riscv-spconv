@@ -98,54 +98,6 @@ struct SpConvAttributes {
                               strides->Shape(), weight->Shape());
   }
 
-/*
-  Status InferOutputShape(const TensorShape& input_shape,
-                          const std::vector<int64_t>& kernel_shape,
-                          const std::vector<int64_t>& strides_p,
-                          const std::vector<int64_t>& dilations_p,
-                          std::vector<int64_t>& pads_p,
-                          std::vector<int64_t>& output_shape,
-                          bool force_symmetric_auto_padding = false) const {
-    size_t rank = input_shape.NumDimensions();
-
-    // Make sure all "metadata" containers have the right number of elements
-    if (rank > strides_p.size())
-      return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-                             "Not enough elements in strides. Expected: ", rank, " Got: ", strides_p.size());
-
-    if (rank > kernel_shape.size())
-      return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-                             "Not enough elements in kernel shape. Expected: ", rank, " Got: ", kernel_shape.size());
-
-    if (rank > dilations_p.size())
-      return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-                             "Not enough elements in dilations. Expected: ", rank, " Got: ", dilations_p.size());
-
-    if ((2 * rank) > pads_p.size())
-      return ORT_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
-                             "Not enough elements in pads. Expected: ", (2 * rank), " Got: ", pads_p.size());
-
-    for (size_t dim = 0; dim < rank; ++dim) {
-      int64_t output_dim_size = 0;
-      ORT_RETURN_IF_ERROR(ComputePadAndOutputShape(input_shape[dim],
-                                                   strides_p[dim],
-                                                   kernel_shape[dim],
-                                                   dilations_p[dim],
-                                                   auto_pad,
-                                                   pads_p.at(dim),
-                                                   pads_p.at(input_shape.NumDimensions() + dim),
-                                                   output_dim_size,
-                                                   force_symmetric_auto_padding));
-      if (output_dim_size <= 0) {
-        return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
-      }
-      output_shape.push_back(output_dim_size);
-    }
-    return Status::OK();
-  }
-
-*/
-
   bool kernel_shape_specified;
 //   std::vector<int64_t> kernel_shape;
   std::vector<int64_t> strides;

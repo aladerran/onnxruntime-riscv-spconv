@@ -568,6 +568,94 @@ void RegisterSystolicSchemas() {
               *ctx.getOutputType(0)->mutable_tensor_type()->mutable_shape());
       });
 
+  ONNX_SYSTOLIC_OPERATOR_SCHEMA(SystolicBatchNorm)
+      .SinceVersion(14)
+      .SetDoc("Batch normalization for Systolic")
+      .Attr("epsilon", "", AttributeProto::FLOAT, 1e-5f)
+      .Attr("momentum", "", AttributeProto::FLOAT, 0.9f)
+      .Attr("training_mode", "", AttributeProto::INT, static_cast<int64_t>(0))
+      .Attr("activation", "", AttributeProto::STRING, OPTIONAL_VALUE)
+      .Attr("activation_params", "", AttributeProto::FLOATS, OPTIONAL_VALUE)
+      .Input( 0, "X", "", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(1, "scale", "", "T1", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(2, "B", "", "T1", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(3, "input_mean", "running (training) or estimated (testing) mean tensor of shape (C).", 
+          "T2", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(4, "input_var", "running (training) or estimated (testing) variance tensor of shape (C).",
+          "T2",OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Output(0, "Y",  "The output tensor of the same shape as X", 
+          "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Output(1, "running_mean", "The running mean after the BatchNormalization operator.",
+          "T2", OpSchema::Optional, true, 1, OpSchema::NonDifferentiable)
+      .Output(2, "running_var", "The running variance after the BatchNormalization operator. This op uses "
+          "the population size (N) for calculating variance, and not the sample size N-1.",
+          "T2", OpSchema::Optional, true, 1, OpSchema::NonDifferentiable)
+      .TypeConstraint(
+          "T",
+          {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"},
+          "Constrain input and output types to float tensors.")
+      .TypeConstraint(
+          "T1",
+          {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"},
+          "Constrain scale and bias types to float tensors.")
+      .TypeConstraint(
+          "T2",
+          {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"},
+          "Constrain mean and variance types to float tensors.") 
+      .TypeAndShapeInferenceFunction([](InferenceContext& ctx) {
+        propagateElemTypeFromInputToOutput(ctx, 0, 0);
+        if (hasNInputShapes(ctx, 5)) {
+          bidirectionalBroadcastShapeInference(
+              ctx.getInputType(0)->tensor_type().shape(),
+              ctx.getInputType(1)->tensor_type().shape(),
+              *ctx.getOutputType(0)->mutable_tensor_type()->mutable_shape());
+        }
+      });
+          
+
+  ONNX_SYSTOLIC_OPERATOR_SCHEMA(SystolicBatchNormRelu)
+      .SinceVersion(14)
+      .SetDoc("Fused Batch normalization + Relu for Systolic")
+      .Attr("epsilon", "", AttributeProto::FLOAT, 1e-5f)
+      .Attr("momentum", "", AttributeProto::FLOAT, 0.9f)
+      .Attr("training_mode", "", AttributeProto::INT, static_cast<int64_t>(0))
+      .Attr("activation", "", AttributeProto::STRING, OPTIONAL_VALUE)
+      .Attr("activation_params", "", AttributeProto::FLOATS, OPTIONAL_VALUE)
+      .Input( 0, "X", "", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(1, "scale", "", "T1", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(2, "B", "", "T1", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(3, "input_mean", "running (training) or estimated (testing) mean tensor of shape (C).", 
+          "T2", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Input(4, "input_var", "running (training) or estimated (testing) variance tensor of shape (C).",
+          "T2",OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Output(0, "Y",  "The output tensor of the same shape as X", 
+          "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
+      .Output(1, "running_mean", "The running mean after the BatchNormalization operator.",
+          "T2", OpSchema::Optional, true, 1, OpSchema::NonDifferentiable)
+      .Output(2, "running_var", "The running variance after the BatchNormalization operator. This op uses "
+          "the population size (N) for calculating variance, and not the sample size N-1.",
+          "T2", OpSchema::Optional, true, 1, OpSchema::NonDifferentiable)
+      .TypeConstraint(
+          "T",
+          {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"},
+          "Constrain input and output types to float tensors.")
+      .TypeConstraint(
+          "T1",
+          {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"},
+          "Constrain scale and bias types to float tensors.")
+      .TypeConstraint(
+          "T2",
+          {"tensor(float16)", "tensor(float)", "tensor(double)", "tensor(bfloat16)"},
+          "Constrain mean and variance types to float tensors.") 
+      .TypeAndShapeInferenceFunction([](InferenceContext& ctx) {
+        propagateElemTypeFromInputToOutput(ctx, 0, 0);
+        if (hasNInputShapes(ctx, 5)) {
+          bidirectionalBroadcastShapeInference(
+              ctx.getInputType(0)->tensor_type().shape(),
+              ctx.getInputType(1)->tensor_type().shape(),
+              *ctx.getOutputType(0)->mutable_tensor_type()->mutable_shape());
+        }
+      });
 
   ONNX_SYSTOLIC_OPERATOR_SCHEMA(SpConv3d)
       .SinceVersion(14)

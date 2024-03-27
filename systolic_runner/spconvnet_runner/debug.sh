@@ -15,13 +15,14 @@ cd -
 # rm -f *.log
 rm -f *.csv *.onnx
 cp -r data/1k/* .
-cp ./tools/unet_v2_opt_fused.onnx .
+cp ./tools/*.onnx .
 
 {
   echo ===================== Runtime begins =====================
-  spike --extension=gemmini pk ort_test -m unet_v2_opt_fused.onnx -x 2 -O 99
+  # spike --extension=gemmini pk ort_test -m unet_v2_opt_fused.onnx -x 2 -O 99
+  spike --extension=gemmini pk ort_test -m unet_v2_opt_fused_exp.onnx -x 2 -O 99
   echo ===================== Runtime ends =====================
-} > debug.log 2>&1
+} >> debug.log 2>&1
 
 mkdir -p ./output
 rm -f ./output/*.csv

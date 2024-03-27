@@ -29,32 +29,6 @@ ONNX_OPERATOR_TYPED_KERNEL_EX(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     SystolicAddRelu<float>);
 
-// ONNX_OPERATOR_TYPED_KERNEL_EX(
-//     Add,
-//     kOnnxDomain,
-//     14,
-//     double,
-//     kSystolicExecutionProvider,
-//     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<double>()),
-//     Add<double>);
-
-// ONNX_OPERATOR_TYPED_KERNEL_EX(
-//     Add,
-//     kOnnxDomain,
-//     14,
-//     int32_t,
-//     kSystolicExecutionProvider,
-//     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
-//     Add<int32_t>);
-// ONNX_OPERATOR_TYPED_KERNEL_EX(
-//     Add,
-//     kOnnxDomain,
-//     14,
-//     int64_t,
-//     kSystolicExecutionProvider,
-//     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int64_t>()),
-//     Add<int64_t>);
-
 namespace {
 struct SystolicBroadcastHelper : public BroadcastHelper {
   SystolicBroadcastHelper(InputBroadcaster& input_broadcaster,
@@ -120,33 +94,10 @@ Status SystolicAddRelu<T>::Compute(OpKernelContext* context) const {
         // to systolic size and then mvin with 0 stride
         ORT_UNUSED_PARAMETER(per_iter_bh);
         ORT_NOT_IMPLEMENTED("Scalar + Matrix resadd on systolic not implemented");
-        // SystolicBroadcastHelper& sbh = static_cast<SystolicBroadcastHelper&>(per_iter_bh);
-        // const T input0 = per_iter_bh.ScalarInput0<T>();
-        // auto input1 = per_iter_bh.SpanInput1<T>();
-        // auto output = per_iter_bh.OutputSpan<T>();
-
-        // SystolicAdd(
-        //     sbh.accelerator_mode,
-        //     sbh.relu,
-        //     input0, sbh.A_scale,
-        //     input1.data(), sbh.B_scale,
-        //     output.data(), sbh.C_scale,
-        //     output.size());
       },
       [](BroadcastHelper& per_iter_bh) {
         ORT_UNUSED_PARAMETER(per_iter_bh);
         ORT_UNUSED_PARAMETER(per_iter_bh);
-        // SystolicBroadcastHelper& sbh = static_cast<SystolicBroadcastHelper&>(per_iter_bh);
-        // auto input0 = per_iter_bh.SpanInput0<T>();
-        // const T input1 = per_iter_bh.ScalarInput1<T>();
-        // auto output = per_iter_bh.OutputSpan<T>();
-        // SystolicAdd(
-        //     sbh.accelerator_mode,
-        //     sbh.relu,
-        //     input0.data(), sbh.A_scale,
-        //     input1, sbh.B_scale,
-        //     output.data(), sbh.C_scale,
-        //     output.size());
       },
       [](BroadcastHelper& per_iter_bh) {
         SystolicBroadcastHelper& sbh = static_cast<SystolicBroadcastHelper&>(per_iter_bh);

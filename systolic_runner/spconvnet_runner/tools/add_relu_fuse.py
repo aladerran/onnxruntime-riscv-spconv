@@ -36,3 +36,5 @@ fuse_systolic_add_relu(model)
 
 modified_model_path = 'unet_v2_opt_fused.onnx'
 onnx.save(model, modified_model_path)
+
+print(f'Model has been modified with operator fusion and saved as {modified_model_path}')

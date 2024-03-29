@@ -14,7 +14,7 @@ cd -
 ./build.sh --config=Release --parallel --for_firesim
 
 rm -f *.csv *.onnx *.log
-cp -r data/1k_4/* .
+cp -r data/1k/* .
 
 
 cd ~/firesim/sw/firesim-software

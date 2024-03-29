@@ -24,17 +24,3 @@ def fuse_systolic_add_relu(model):
         model.graph.node.remove(node)
 
     model.graph.node.extend(nodes_to_add)
-
-model_path = './unet_v2_opt.onnx'
-model = onnx.load(model_path)
-
-for node in model.graph.node:
-    if node.op_type == "Add":
-        node.op_type = "SystolicAdd"
-
-fuse_systolic_add_relu(model)
-
-modified_model_path = 'unet_v2_opt_fused.onnx'
-onnx.save(model, modified_model_path)
-
-print(f'Model has been modified with operator fusion and saved as {modified_model_path}')

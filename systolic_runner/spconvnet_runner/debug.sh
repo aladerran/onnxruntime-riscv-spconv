@@ -19,8 +19,7 @@ cp ./tools/*.onnx .
 
 {
   echo ===================== Runtime begins =====================
-  # spike --extension=gemmini pk ort_test -m unet_v2_opt_fused.onnx -x 2 -O 99
-  spike --extension=gemmini pk ort_test -m unet_v2_opt_fused_exp.onnx -x 2 -O 99
+  spike --extension=gemmini pk ort_test -m unet_v2_opt_fused_1k.onnx -x 2 -O 99
   echo ===================== Runtime ends =====================
 } >> debug.log 2>&1
 

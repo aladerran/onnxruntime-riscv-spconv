@@ -50,7 +50,7 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
     // OutputCoords_i, Nbmaps_i, Nbsizes_i, SizesIO_i should be provided togather, or none of them is provided
 
   // std::cout << "debug-zxr: start spconv3d computing" << std::endl;
-  // std::cout << "debug-zxr:domain:" << context->GetOpDomain() << " /type:" << context->GetOpType() << " /name:" << context->GetNodeName() << std::endl;
+  std::cout << "debug-zxr:domain:" << context->GetOpDomain() << " /type:" << context->GetOpType() << " /name:" << context->GetNodeName() << std::endl;
   std::string node_name = context->GetNodeName();
 
 
@@ -83,7 +83,7 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   const float* weight_data = Weight->template Data<float>();
 
   if ( !transposed ){
-    // std::cout << "debug-zxr: start buildkmap" << std::endl;
+    std::cout << "debug-zxr: start buildkmap" << std::endl;
     ORT_RETURN_IF_ERROR(BuildKmap(context, InputCoords, InputStrides, OutputCoords, Nbmaps_o, Nbsizes_o));
     int32_t* sizes_io_data = SizesIO_o -> MutableData<int32_t>();
     sizes_io_data[0] = static_cast<int32_t>(InputCoords->Shape()[0]);
@@ -116,7 +116,8 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
 
   total_cycles += read_cycles() - total_start;
 
-  if(context->GetNodeName() == "/fuse/resblock2/main/conv3d2_3/SpConv3d"){
+  if(context->GetNodeName() == "/fuse/resblock2/main/conv3d2_3/SpConv3d"
+    || context->GetNodeName() == "/4/4.0/conv3d/SpConv3d"){
     auto print_start = read_cycles();
     std::cout << "==================" << std::endl;
     std::cout << "Spconv3D Profiling:" << std::endl;
@@ -306,19 +307,19 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
 
 // ==========================================================================================
 
-  // std::cout << "debug-lsr: end downsample" << std::endl;
+  std::cout << "debug-lsr: end downsample" << std::endl;
   // std::vector<int64_t> queries(num_output_coords * kernel_volume);
   std::vector<uint32_t> queries(num_output_coords * kernel_volume);
   // kernel_hash_cpu(output_coords_data, offsets.data(), queries.data(), num_output_coords, kernel_volume);
   kernel_hash_cpu_uint32t(output_coords_data, offsets.data(), queries.data(), num_output_coords, kernel_volume);
-  // std::cout << "debug-lsr: end kernel_hash_cpu" << std::endl;
+  std::cout << "debug-lsr: end kernel_hash_cpu" << std::endl;
 
   std::vector<uint32_t> indices(references.size());
   std::iota(indices.begin(), indices.end(), 0);
   std::vector<uint32_t> results(queries.size());
   // hash_query_cpu(queries.data(), references.data(), indices.data(), results.data(), references.size(), queries.size());
   hash_query_cpu_uint32t(queries.data(), references.data(), indices.data(), results.data(), references.size(), queries.size());
-  // std::cout << "debug-lsr: end hash_query_cpu" << std::endl;
+  std::cout << "debug-lsr: end hash_query_cpu" << std::endl;
 
 // ==========================================================================================
 
@@ -326,7 +327,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   //int64_t kernel_volume = kernel_shape[0] * kernel_shape[1] * kernel_shape[2];
   std::vector<int64_t> nbsizes_shape({kernel_volume});
   Nbsizes = context->Output(4, nbsizes_shape);
-  // std::cout << "debug-zxr: parse nbsizes" << std::endl;
+  std::cout << "debug-zxr: parse nbsizes" << std::endl;
   auto parse_nbsizes_start = read_cycles();
   int* nbsizes_data = Nbsizes->template MutableData<int32_t>();
   for (size_t i = 0; i < kernel_volume; i++){
@@ -343,7 +344,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   parse_nbsizes_cycles += read_cycles() - parse_nbsizes_start;
 
   //parse nbmaps
-  // std::cout << "debug-zxr: parse nbmaps" << std::endl;
+  std::cout << "debug-zxr: parse nbmaps" << std::endl;
   auto parse_nbmaps_start = read_cycles();
   int64_t sum_nbmaps = 0;
   for(size_t i = 0; i < kernel_volume; i++){
@@ -364,7 +365,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   }
   map_cycles += read_cycles() - map_start;
   parse_nbmaps_cycles += read_cycles() - parse_nbmaps_start;
-  // std::cout << "debug-zxr: end buildkmap" << std::endl;
+  std::cout << "debug-zxr: end buildkmap" << std::endl;
   return Status::OK();
 }
 
@@ -382,7 +383,7 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &Output
   const int* nbsizes_data = Nbsizes->template Data<int32_t>();
   size_t kernel_volume = conv_attrs_.kernel_shape_[0] * conv_attrs_.kernel_shape_[1] * conv_attrs_.kernel_shape_[2];
 
-  // std::cout << "debug-zxr: start convolution_forward_cpu" << std::endl;
+  std::cout << "debug-zxr: start convolution_forward_cpu" << std::endl;
   // convolution_forward_cpu(input_feats_data, output_feats_data, weight_data, nbmaps_data, nbsizes_data, conv_attrs_.transposed == 1, 
   //                         static_cast<const int>(Weight->Shape()[1]), static_cast<const int>(Weight->Shape()[2]), 
   //                         static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), 
@@ -392,7 +393,7 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &Output
                           static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), 
                           static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());              
   conv_cycles += read_cycles() - conv_start;
-  // std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
+  std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
   return Status::OK();
 }
 

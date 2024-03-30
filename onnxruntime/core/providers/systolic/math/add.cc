@@ -118,7 +118,7 @@ Status SystolicAddRelu<T>::Compute(OpKernelContext* context) const {
         
         add_relu_cycles += read_cycles() - add_relu_start;
         add_relu_count++;
-        if (add_relu_count > 15) {
+        if (add_relu_count > 15 || add_relu_count == 8) {
           printf("Systolic Add w\\ Relu cycles: %llu\n", add_relu_cycles);
         }  
       }};

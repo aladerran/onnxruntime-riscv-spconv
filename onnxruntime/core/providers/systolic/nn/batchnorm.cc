@@ -16,6 +16,7 @@
 using onnxruntime::concurrency::ThreadPool;
 
 unsigned long long systolic_norm_cycles;
+unsigned long long systolic_adjust_cycles;
 
 namespace onnxruntime {
 namespace systolic {
@@ -59,7 +60,7 @@ Status SystolicBatchNorm<T>::Compute(OpKernelContext* p_op_kernel_context) const
     T* Y_pointer = Y->template MutableData<T>();
 
     // we assuem var !=0 at inference session so that we can offload it to Systolic Array
-
+    unsigned long long adjust_start = read_cycles();
     // we first create an adjusted_scale in dim [C, C] from scale by copying scale into a 2-D vector
     std::vector<float> scale_vector(C * C);
     for (size_t i = 0; i < C; ++i) {
@@ -73,6 +74,7 @@ Status SystolicBatchNorm<T>::Compute(OpKernelContext* p_op_kernel_context) const
         bias_vector[i * C + j] = B->template Data<T>()[j];
       }
     }
+    systolic_adjust_cycles += read_cycles() - adjust_start;
 
     // call SystolicMutilply
     SystolicMultiply(
@@ -240,8 +242,11 @@ Status SystolicBatchNorm<T>::Compute(OpKernelContext* p_op_kernel_context) const
   // }
 
   systolic_norm_cycles += read_cycles() - norm_start;
-  if(p_op_kernel_context->GetNodeName() == "/fuse/resblock2/main/batchnorm2/norm_3/BatchNormalization"){
-    printf("Systolic BatchNorm cycles: %llu\n", systolic_norm_cycles);
+  if(p_op_kernel_context->GetNodeName() == "/fuse/resblock2/main/batchnorm2/norm_3/BatchNormalization"
+    || p_op_kernel_context->GetNodeName() == "/3/3.2/main/batchnorm2/norm/BatchNormalization"){
+    std::cout << "Systolic BatchNorm cycles: " << systolic_norm_cycles << std::endl;
+    std::cout << "Systolic Adjust cycles: " << systolic_adjust_cycles << std::endl;
+    std::cout << "Real BatchNorm cycles: " << systolic_norm_cycles - systolic_adjust_cycles << std::endl;
   }
   
 

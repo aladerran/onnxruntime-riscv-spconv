@@ -72,7 +72,6 @@
 #define LAYERNORM 2
 #define IGELU 3
 #define SOFTMAX 4
-// #define BATCHNORM 5
 
 #ifdef ELEM_T_IS_FLOAT
 elem_t elem_t_bits_to_elem_t(elem_t_bits x) {

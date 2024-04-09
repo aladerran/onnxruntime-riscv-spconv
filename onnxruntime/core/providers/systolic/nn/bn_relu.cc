@@ -16,7 +16,6 @@
 using onnxruntime::concurrency::ThreadPool;
 
 unsigned long long systolic_norm_relu_cycles;
-unsigned long long systolic_adjust_2_cycles;
 
 namespace onnxruntime {
 namespace systolic {
@@ -34,6 +33,8 @@ ONNX_OPERATOR_TYPED_KERNEL_EX(
 
 template <typename T>
 Status SystolicBatchNormRelu<T>::Compute(OpKernelContext* p_op_kernel_context) const {
+
+  std::cout << "debug-lsr:domain:" << p_op_kernel_context->GetOpDomain() << " /type:" << p_op_kernel_context->GetOpType() << " /name:" << p_op_kernel_context->GetNodeName() << std::endl;
 
   unsigned long long norm_start = read_cycles();
 
@@ -56,23 +57,14 @@ Status SystolicBatchNormRelu<T>::Compute(OpKernelContext* p_op_kernel_context) c
 
     const T* X_pointer = X->template Data<T>();
     T* Y_pointer = Y->template MutableData<T>();
+    const T* B_pointer = B->template Data<T>();
 
     // we assuem var !=0 at inference session so that we can offload it to Systolic Array
-    auto adjust_2_start = read_cycles();
-    // we first create an adjusted_scale in dim [C, C] from scale by copying scale into a 2-D vector
+    // create an adjusted_scale in dim [C, C] from scale by copying scale into a 2-D vector
     std::vector<float> scale_vector(C * C);
     for (size_t i = 0; i < C; ++i) {
       scale_vector[i * C + i] = scale->template Data<T>()[i];
     }
-
-    // then we create an adjusted_bias in dim [N, C] from B by copying B into a 2-D vector
-    std::vector<float> bias_vector(N * C);
-    for (size_t i = 0; i < N; ++i) {
-      for (size_t j = 0; j < C; ++j) {
-        bias_vector[i * C + j] = B->template Data<T>()[j];
-      }
-    }
-    systolic_adjust_2_cycles += read_cycles() - adjust_2_start;
 
     // call SystolicMutilply
     SystolicMultiply(
@@ -82,10 +74,15 @@ Status SystolicBatchNormRelu<T>::Compute(OpKernelContext* p_op_kernel_context) c
         /* dimJ */ C,
         /* dimK */ C,
         /* in1 */ X_pointer,
+        /* strideIn1 */ C,
         /* in2 */ scale_vector.data(), 
+        /* strideIn2 */ C,
         /* out */ Y_pointer,
+        /* strideOut */ C,
         /* real_multiplier */ 1.0f,
-        /* bias */ bias_vector.data());
+        /* bias */ B_pointer,
+        /* strideBias */ C,
+        /* repeating_bias */ true);
 
   }
 
@@ -93,8 +90,6 @@ Status SystolicBatchNormRelu<T>::Compute(OpKernelContext* p_op_kernel_context) c
   if(p_op_kernel_context->GetNodeName() == "/fuse/resblock2/main/batchnorm1/norm_3/BatchNormalization_SystolicBatchNormRelu"
    || p_op_kernel_context->GetNodeName() == "/4/4.0/batchnorm/norm/BatchNormalization_SystolicBatchNormRelu"){
     std::cout << "Systolic BatchNorm + Relu cycles: " << systolic_norm_relu_cycles << std::endl;
-    std::cout << "Systolic Adjust (Fused) cycles: " << systolic_adjust_2_cycles << std::endl;
-    std::cout << "Real BatchNorm + Relu cycles: " << systolic_norm_relu_cycles - systolic_adjust_2_cycles << std::endl;
   }
   
 

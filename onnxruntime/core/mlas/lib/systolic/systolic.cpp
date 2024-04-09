@@ -207,8 +207,8 @@ void SystolicMultiply(char accelerator_mode, bool relu,
                       acc_scale_t real_multiplier,
                       const acc_t* bias, int strideBias, bool repeating_bias) {
 #ifndef FOR_FIRESIM
-  printf("Called into systolic matmul!\n");
-  printf("Using accelerated matmul with dimensions (%d, %d, %d)\n", dimI, dimJ, dimK);
+//   printf("Called into systolic matmul!\n");
+//   printf("Using accelerated matmul with dimensions (%d, %d, %d)\n", dimI, dimJ, dimK);
 #endif
   tiled_matmul_auto(dimI, dimJ, dimK,
                     strideIn1, strideIn2, strideBias, strideOut,
@@ -418,6 +418,8 @@ unsigned long long gather_cycles;
 unsigned long long scatter_cycles;
 unsigned long long matmul_cycles;
 unsigned long long buffer_cycles;
+unsigned long long zeroing_cycles;
+// unsigned long long gather_matmul_scatter_cycles;
 unsigned long long hash_cycles;
 unsigned long long hash_kernel_cycles;
 unsigned long long hash_query_cycles;
@@ -471,6 +473,8 @@ void scatter_cpu(const int n_in, const int n_out, const int c,
                  const float *in_feat, float *out_feat, const int *kmap,
                  const bool transpose) {
 
+    // std::cout << "Scattering " << n_in << " points" << std::endl;
+
     auto scatter_start = read_cycles();
 
     for (int i = 0; i < n_in; i++) {
@@ -490,6 +494,8 @@ void scatter_cpu(const int n_in, const int n_out, const int c,
 void gather_cpu(const int n_k, const int n_in, const int c,
                 const float *in_feat, float *out_feat, const int *kmap,
                 const bool transpose) {
+
+    // std::cout << "Gathering " << n_k << " points" << std::endl;
 
     auto gather_start = read_cycles();
 
@@ -520,12 +526,15 @@ void convolution_forward_cpu(const float* in_feat,
                              const int kernel_volume,
                              char accelerator_mode) {
 
-    auto buffer_start = read_cycles();
 
     tiled_matmul_type_t tiled_matmul_type = get_accelerator_mode(accelerator_mode);
 
+    auto zeoring_start = read_cycles();
+
     // Initialize output features to zero
     std::fill(out_feat, out_feat + out_nrows * out_channels, 0);
+
+    zeroing_cycles += read_cycles() - zeoring_start;
 
     int in_buffer_size = 1;
     bool flag = false;
@@ -559,8 +568,13 @@ void convolution_forward_cpu(const float* in_feat,
 
     // std::cout << "in_buffer_size: " << in_buffer_size << std::endl;
 
+    auto buffer_start = read_cycles();
+
     std::vector<float> in_buffer(in_buffer_size * in_channels, 0);
     std::vector<float> out_buffer(in_buffer_size * out_channels, 0);
+
+    buffer_cycles += read_cycles() - buffer_start;
+
     int cur_offset = 0;
 
     for (int i = 0; i < kernel_volume; i++) {
@@ -595,32 +609,141 @@ void convolution_forward_cpu(const float* in_feat,
                     neighbor_map + cur_offset, transpose);
         cur_offset += 2 * neighbor_offset[i];
 
-        buffer_cycles += read_cycles() - buffer_start;
     }
 
 }
 
-void convolution_forward_cpu_fixed_buffer(const float* in_feat,
-                                          float* out_feat,
-                                          const float* kernel,
-                                          const int* neighbor_map,
-                                          const int* neighbor_offset,
-                                          const bool transpose,
-                                          const int in_channels,
-                                          const int out_channels,
-                                          const int in_nrows,
-                                          const int out_nrows,
-                                          const int kernel_volume,
-                                          char accelerator_mode) {
+// // TODO: combine gather-matmul-scatter into one function to reduce memory footprint
+// // what we are trying to do here is to gather and scatter feats directly to and to from spad/acc without using buffers
+// void tiled_gather_matmul_scatter(const int n_k, const int in_nrows, const int in_channels,
+//                                  const float* in_feat, float* out_feat,
+//                                  const float* kernel, const int out_channels,
+//                                  const int* kmap, const bool transpose, 
+//                                  const int buffer_size, const int out_nrows, 
+//                                  char accelerator_mode) {
 
-    auto fix_buffer_start = read_cycles();
+//     auto gather_matmul_scatter_start = read_cycles();
 
-    convolution_forward_cpu(in_feat, out_feat, kernel, neighbor_map, neighbor_offset, transpose,
-                            in_channels, out_channels, in_nrows, out_nrows, kernel_volume, accelerator_mode);
+//     auto in_buffer_size = buffer_size * in_channels;
+//     auto out_buffer_size = buffer_size * out_channels;
 
-    buffer_cycles += read_cycles() - fix_buffer_start;
+//     const uint32_t A_sp_addr_start = 0;
+//     const uint32_t B_sp_addr_start = BANK_NUM * BANK_ROWS - out_buffer_size;
+//     // const uint32_t C_sp_addr_start = 
 
-}
+//     tiled_matmul_type_t tiled_matmul_type = get_accelerator_mode(accelerator_mode);
+
+//     gemmini_config_ld(sizeof(elem_t));
+
+//     for (int i = 0; i < n_k; i++) {
+//         int in_pos = kmap[2 * i + transpose];
+//         if (in_pos < 0) {
+//             continue;
+//         }
+//         for (int j = 0; j < in_channels; j++) {
+//             // mvin feats to gemmini spad
+//             gemmini_mvin(in_feat + in_pos * in_channels + j, j * sizeof(elem_t));
+//         }
+//     }
+
+//     // placeholder for mvin kernel to gemmini spad
+    
+
+//     // placeholder for gemmini matmul logic
+    
+
+//     for (int i = 0; i < n_k; i++) {
+//         int out_pos = kmap[2 * i + 1 - transpose];
+//         if (out_pos < 0) {
+//             continue;
+//         }
+//         for (int j = 0; j < out_channels; j++) {
+//             // mvout feats from gemmini acc to out_feat
+//             // gemmini_mvout();
+//         }
+//     }
+
+//     gather_matmul_scatter_cycles += read_cycles() - gather_matmul_scatter_start;
+// }
+
+// void convolution_forward_gemmini(const float* in_feat,
+//                                           float* out_feat,
+//                                           const float* kernel,
+//                                           const int* neighbor_map,
+//                                           const int* neighbor_offset,
+//                                           const bool transpose,
+//                                           const int in_channels,
+//                                           const int out_channels,
+//                                           const int in_nrows,
+//                                           const int out_nrows,
+//                                           const int kernel_volume,
+//                                           char accelerator_mode) {
+
+//     auto gemmini_buffer_start = read_cycles();
+
+//     tiled_matmul_type_t tiled_matmul_type = get_accelerator_mode(accelerator_mode);
+
+//     // Initialize output features to zero ?? maybe not needed if we use gemmini mvout w\ DMA st. ??
+//     std::fill(out_feat, out_feat + out_nrows * out_channels, 0);
+
+//     int buffer_size = 1;
+//     bool flag = false;
+
+//     // Determine buffer size for memory optimization
+//     if (kernel_volume % 2 && out_nrows == in_nrows) {
+//         flag = true;
+//         buffer_size =
+//             *std::max_element(neighbor_offset,
+//                               neighbor_offset + kernel_volume / 2);
+//         buffer_size =
+//             std::max(buffer_size,
+//                      *std::max_element(
+//                          neighbor_offset + kernel_volume / 2 + 1,
+//                          neighbor_offset + kernel_volume));
+//         buffer_size = std::max(buffer_size, 1);
+
+//         // Perform initial matrix multiplication
+//         matmul_type_dispatch(tiled_matmul_type,
+//                              in_feat,
+//                              kernel + (kernel_volume / 2) * in_channels * out_channels,
+//                              out_feat,
+//                              in_nrows,
+//                              out_channels,
+//                              in_channels);
+//     } else {
+//         buffer_size =
+//             *std::max_element(neighbor_offset,
+//                               neighbor_offset + kernel_volume);
+//     }
+
+//     int cur_offset = 0;
+
+//     for (int i = 0; i < kernel_volume; i++) {
+
+//         if (flag && (i == kernel_volume / 2)) {
+//             cur_offset += 2 * neighbor_offset[i];
+//             continue;
+//         }
+
+//         if (neighbor_offset[i] == 0) {
+//             continue;
+//         }
+
+//         tiled_gather_matmul_scatter(neighbor_offset[i], in_nrows, in_channels,
+//                                     in_feat, out_feat,
+//                                     kernel + i * in_channels * out_channels, out_channels,
+//                                     neighbor_map + cur_offset, transpose,
+//                                     buffer_size, out_nrows,
+//                                     tiled_matmul_type);
+
+//         cur_offset += 2 * neighbor_offset[i];
+
+//         buffer_cycles += read_cycles() - gemmini_buffer_start;
+//     }
+
+//     buffer_cycles += read_cycles() - gemmini_buffer_start;
+
+// }
 
 
 void cpu_hash_wrapper(const int N, const int *data, int64_t *out) {
@@ -654,6 +777,7 @@ void hash_cpu(const int *idx, int64_t *out, const int N) {
 }
 
 void hash_cpu_uint32t(const int *idx, uint32_t *out, const int N) {
+    // std::cout << "Hashing " << N << " points" << std::endl;
     auto hash_start = read_cycles();
     cpu_hash_32bit_wrapper(N, idx, out);
     hash_cycles += read_cycles() - hash_start;
@@ -708,6 +832,7 @@ void kernel_hash_cpu(const int *idx, const int *kernel_offset,
 
 void kernel_hash_cpu_uint32t(const int *idx, const int *kernel_offset,
                              uint32_t *out, const int N, const int K) {
+    // std::cout << "Hashing " << N << " (kernel)points" << std::endl;                            
     auto hash_start = read_cycles();
     cpu_kernel_hash_32bit_wrapper(N, K, idx, kernel_offset, out);
     hash_kernel_cycles += read_cycles() - hash_start;
@@ -762,7 +887,9 @@ void print_cycles_backend() {
     std::cout << "Scatter cycles: " << scatter_cycles << std::endl;
     std::cout << "Matmul cycles: " << matmul_cycles << std::endl;
     std::cout << "Gather cycles: " << gather_cycles << std::endl;
-    std::cout << "Buffer cycles: " << buffer_cycles- scatter_cycles - matmul_cycles - gather_cycles << std::endl;
+    std::cout << "Zeroing cycles: " << zeroing_cycles << std::endl;
+    std::cout << "Buffer cycles: " << buffer_cycles << std::endl;
+    // std::cout << "Gather-Matmul-Scatter cycles: " << gather_matmul_scatter_cycles << std::endl;
     std::cout << "Hash cycles: " << hash_cycles << std::endl;
     std::cout << "Hash kernel cycles: " << hash_kernel_cycles << std::endl;
     std::cout << "Hash query cycles: " << hash_query_cycles << std::endl;

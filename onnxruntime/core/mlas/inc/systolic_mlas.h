@@ -130,13 +130,13 @@ MLASCALL(const float* in_feat, float* out_feat,
           const int in_nrows, const int out_nrows,
           const int kernel_volume, char accelerator_mode);
 
-void convolution_forward_cpu_fixed_buffer
-MLASCALL(const float* in_feat, float* out_feat,
-          const float* kernel, const int* neighbor_map,
-          const int* neighbor_offset, const bool transpose,
-          const int in_channels, const int out_channels,
-          const int in_nrows, const int out_nrows,
-          const int kernel_volume, char accelerator_mode);
+// void convolution_forward_gemmini
+// MLASCALL(const float* in_feat, float* out_feat,
+//           const float* kernel, const int* neighbor_map,
+//           const int* neighbor_offset, const bool transpose,
+//           const int in_channels, const int out_channels,
+//           const int in_nrows, const int out_nrows,
+//           const int kernel_volume, char accelerator_mode);
 
 void hash_cpu
 MLASCALL(const int *idx, int64_t *out, const int N);

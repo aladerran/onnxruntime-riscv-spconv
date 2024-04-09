@@ -83,7 +83,7 @@ Status SpConv3d<T>::Compute(OpKernelContext* context) const {
   const float* weight_data = Weight->template Data<float>();
 
   if ( !transposed ){
-    std::cout << "debug-zxr: start buildkmap" << std::endl;
+    // std::cout << "debug-zxr: start buildkmap" << std::endl;
     ORT_RETURN_IF_ERROR(BuildKmap(context, InputCoords, InputStrides, OutputCoords, Nbmaps_o, Nbsizes_o));
     int32_t* sizes_io_data = SizesIO_o -> MutableData<int32_t>();
     sizes_io_data[0] = static_cast<int32_t>(InputCoords->Shape()[0]);
@@ -211,7 +211,6 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   const TensorShape& input_coords_shape = InputCoords -> Shape();
   const int* input_coords_data = InputCoords-> template Data<int32_t>();
   std::vector<uint32_t> references(input_coords_shape[0]);
-  // hash_cpu(input_coords_data, references.data(), input_coords_shape[0]);
   hash_cpu_uint32t(input_coords_data, references.data(), input_coords_shape[0]);
 
   int* output_coords_data;
@@ -236,7 +235,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
         output_coords_vector_uncoalesced[i][0] = input_coords_data[ i * 4 ] / sample_stride[0] * sample_stride[0];
         output_coords_vector_uncoalesced[i][1] = input_coords_data[ i * 4 + 1 ] / sample_stride[1] * sample_stride[1];
         output_coords_vector_uncoalesced[i][2] = input_coords_data[ i * 4 + 2 ] / sample_stride[2] * sample_stride[2];
-        // output_coords_vector_uncoalesced[i][3] = input_coords_data[ i * 4 + 3 ];
+        output_coords_vector_uncoalesced[i][3] = input_coords_data[ i * 4 + 3 ];
       }
       
     } else {
@@ -267,14 +266,14 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
           coord[0] = input_coords_data[ i * 4 ] + offsets[ j * 3];
           coord[1] = input_coords_data[ i * 4 + 1] + offsets[ j * 3 + 1];
           coord[2] = input_coords_data[ i * 4 + 2] + offsets[ j * 3 + 2];
-          // coord[3] = input_coords_data[ i * 4 + 3];
+          coord[3] = input_coords_data[ i * 4 + 3];
           if( coord[0] % sample_stride[0] == 0 && coord[0] >= min[0] /* &&coord[0] <= max[0] */ 
               && coord[1] % sample_stride[1] == 0 && coord[1] >= min[1] /* &&coord[0] <= max[0] */ 
               && coord[2] % sample_stride[2] == 0 && coord[2] >= min[2] /* &&coord[0] <= max[0] */ ){
             output_coords_vector_uncoalesced[count][0] = coord[0];
             output_coords_vector_uncoalesced[count][1] = coord[1];
             output_coords_vector_uncoalesced[count][2] = coord[2];
-            // output_coords_vector_uncoalesced[count][3] = coord[3];
+            output_coords_vector_uncoalesced[count][3] = coord[3];
             count++;
           }
         }
@@ -294,7 +293,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
       output_coords_data[i * 4] = output_coords_vector_uncoalesced[i][0];
       output_coords_data[i * 4 + 1] = output_coords_vector_uncoalesced[i][1];
       output_coords_data[i * 4 + 2] = output_coords_vector_uncoalesced[i][2];
-      // output_coords_data[i * 4 + 3] = output_coords_vector_uncoalesced[i][3];
+      output_coords_data[i * 4 + 3] = output_coords_vector_uncoalesced[i][3];
     }
   } else {
     // use input coordinates as output coordinates
@@ -307,27 +306,20 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
 
 // ==========================================================================================
 
-  std::cout << "debug-lsr: end downsample" << std::endl;
-  // std::vector<int64_t> queries(num_output_coords * kernel_volume);
   std::vector<uint32_t> queries(num_output_coords * kernel_volume);
-  // kernel_hash_cpu(output_coords_data, offsets.data(), queries.data(), num_output_coords, kernel_volume);
   kernel_hash_cpu_uint32t(output_coords_data, offsets.data(), queries.data(), num_output_coords, kernel_volume);
-  std::cout << "debug-lsr: end kernel_hash_cpu" << std::endl;
 
   std::vector<uint32_t> indices(references.size());
   std::iota(indices.begin(), indices.end(), 0);
   std::vector<uint32_t> results(queries.size());
-  // hash_query_cpu(queries.data(), references.data(), indices.data(), results.data(), references.size(), queries.size());
   hash_query_cpu_uint32t(queries.data(), references.data(), indices.data(), results.data(), references.size(), queries.size());
-  std::cout << "debug-lsr: end hash_query_cpu" << std::endl;
 
 // ==========================================================================================
 
   //parse nbsizes
-  //int64_t kernel_volume = kernel_shape[0] * kernel_shape[1] * kernel_shape[2];
   std::vector<int64_t> nbsizes_shape({kernel_volume});
   Nbsizes = context->Output(4, nbsizes_shape);
-  std::cout << "debug-zxr: parse nbsizes" << std::endl;
+  // std::cout << "debug-zxr: parse nbsizes" << std::endl;
   auto parse_nbsizes_start = read_cycles();
   int* nbsizes_data = Nbsizes->template MutableData<int32_t>();
   for (size_t i = 0; i < kernel_volume; i++){
@@ -344,7 +336,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   parse_nbsizes_cycles += read_cycles() - parse_nbsizes_start;
 
   //parse nbmaps
-  std::cout << "debug-zxr: parse nbmaps" << std::endl;
+  // std::cout << "debug-zxr: parse nbmaps" << std::endl;
   auto parse_nbmaps_start = read_cycles();
   int64_t sum_nbmaps = 0;
   for(size_t i = 0; i < kernel_volume; i++){
@@ -365,7 +357,7 @@ Status SpConv3d<T>::BuildKmap(OpKernelContext * context, const Tensor* InputCoor
   }
   map_cycles += read_cycles() - map_start;
   parse_nbmaps_cycles += read_cycles() - parse_nbmaps_start;
-  std::cout << "debug-zxr: end buildkmap" << std::endl;
+  // std::cout << "debug-zxr: end buildkmap" << std::endl;
   return Status::OK();
 }
 
@@ -383,17 +375,13 @@ Status SpConv3d<T>::ConvolutionForward(const Tensor* InputFeats, Tensor* &Output
   const int* nbsizes_data = Nbsizes->template Data<int32_t>();
   size_t kernel_volume = conv_attrs_.kernel_shape_[0] * conv_attrs_.kernel_shape_[1] * conv_attrs_.kernel_shape_[2];
 
-  std::cout << "debug-zxr: start convolution_forward_cpu" << std::endl;
-  // convolution_forward_cpu(input_feats_data, output_feats_data, weight_data, nbmaps_data, nbsizes_data, conv_attrs_.transposed == 1, 
-  //                         static_cast<const int>(Weight->Shape()[1]), static_cast<const int>(Weight->Shape()[2]), 
-  //                         static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), 
-  //                         static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());     
-  convolution_forward_cpu_fixed_buffer(input_feats_data, output_feats_data, weight_data, nbmaps_data, nbsizes_data, conv_attrs_.transposed == 1, 
+  // std::cout << "debug-zxr: start convolution_forward_cpu" << std::endl;
+  convolution_forward_cpu(input_feats_data, output_feats_data, weight_data, nbmaps_data, nbsizes_data, conv_attrs_.transposed == 1, 
                           static_cast<const int>(Weight->Shape()[1]), static_cast<const int>(Weight->Shape()[2]), 
                           static_cast<const int>(InputFeats->Shape()[0]), static_cast<const int>(OutputFeats->Shape()[0]), static_cast<const int>(kernel_volume), 
-                          static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());              
+                          static_cast<const SystolicExecutionProvider*>(this->Info().GetExecutionProvider())->GetAcceleratorMode());     
   conv_cycles += read_cycles() - conv_start;
-  std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
+  // std::cout << "debug-zxr: end convolution_forward_cpu" << std::endl;
   return Status::OK();
 }
 

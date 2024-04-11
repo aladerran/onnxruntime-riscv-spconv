@@ -1,11 +1,9 @@
+// file under: /home/centos/firesim/target-design/chipyard/generators/gemmini/software/ort_test.json
+
 {
   "base": "br-base.json",
   "name": "ort_test",
   "outputs": [
-    "/output/trace_spconv3d_cpu.json",
-    "/output/trace_resnet_cpu.json",
-    "/output/trace_unet_cpu.json",
-    "/output/trace_spconv3d_gemmini.json",
     "/output/trace_resnet_gemmini.json",
     "/output/trace_unet_gemmini.json",
     "/output/output_coords.csv",

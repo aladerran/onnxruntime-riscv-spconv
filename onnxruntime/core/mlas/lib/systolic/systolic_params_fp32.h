@@ -5,14 +5,14 @@
 #include <limits.h>
 
 #define XCUSTOM_ACC 3
-#define DIM 32
+#define DIM 8
 #define ADDR_LEN 32
 #define BANK_NUM 4
-#define BANK_ROWS 8192
-#define ACC_ROWS 8192
+#define BANK_ROWS 4096
+#define ACC_ROWS 4096
 #define MAX_BYTES 64
-#define MAX_BLOCK_LEN 1
-#define MAX_BLOCK_LEN_ACC 1
+#define MAX_BLOCK_LEN (MAX_BYTES/(DIM*4))
+#define MAX_BLOCK_LEN_ACC (MAX_BYTES/(DIM*4))
 
 typedef float elem_t;
 static const elem_t elem_t_max = 3.4028235E38;

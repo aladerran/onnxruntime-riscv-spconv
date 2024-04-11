@@ -1,0 +1,16 @@
+// file under: /home/centos/firesim/deploy/workloads/ort_test.json
+
+{
+	"benchmark_name": "ort_test",
+	"common_simulation_outputs": [
+		"uartlog"
+	],
+	"common_bootbinary": "../../../target-design/chipyard/software/firemarshal/images/firechip/ort_test/ort_test-bin",
+	"common_rootfs": "../../../target-design/chipyard/software/firemarshal/images/firechip/ort_test/ort_test.img",
+	"common_outputs": [
+		"/output/trace_resnet_gemmini.json",
+		"/output/trace_unet_gemmini.json",
+		"/output/output_coords.csv",
+		"/output/output_feats.csv"
+	]
+}

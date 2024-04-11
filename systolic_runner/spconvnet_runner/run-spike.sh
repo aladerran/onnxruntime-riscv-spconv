@@ -16,31 +16,13 @@ cd -
 rm -f *.csv *.onnx
 cp -r data/1k/* .
 
-# Run tests and append output to log files
-# For each test, replace the placeholder with your ELF file path and other parameters
 {
   echo ===================== Runtime begins =====================
-  spike --extension=gemmini pk ort_test -m unet_v2.onnx -x 2 -O 99
+  # change the model path to what you want to run/optimize
+  spike --extension=gemmini pk ort_test -m unet_v2_1k_fused.onnx -x 2 -O 99 -s ./unet_v2_1k_fused_opt.onnx
   echo ===================== Runtime ends =====================
-} >> unet_Gemmini_spike.log 2>&1
+} >> debug.log 2>&1
 
-{
-  echo ===================== Runtime begins =====================
-  spike --extension=gemmini pk ort_test -m resnet_v2.onnx -x 2 -O 99
-  echo ===================== Runtime ends =====================
-} >> resnet_Gemmini_spike.log 2>&1
-
-{
-  echo ===================== Runtime begins =====================
-  spike --extension=gemmini pk ort_test -m unet_v2.onnx -x 0 -O 99
-  echo ===================== Runtime ends =====================
-} >> unet_CPU_spike.log 2>&1
-
-{
-  echo ===================== Runtime begins =====================
-  spike --extension=gemmini pk ort_test -m resnet_v2.onnx -x 0 -O 99
-  echo ===================== Runtime ends =====================
-} >> resnet_CPU_spike.log 2>&1
-
-
-rm -f *.csv *.onnx
+mkdir -p ./output
+rm -f ./output/*.csv
+mv *.csv ./output/

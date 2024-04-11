@@ -13,4 +13,6 @@ imagenet_runner/benchmark/
 mnist_training/mnist
 mnist_training/mnist_train
 mnist_training/mnist.zip
-*.log
+spconvnet_runner/output/*
+spconvnet_runner/*.log
+spconvnet_runner/*.csv

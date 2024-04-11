@@ -13,7 +13,7 @@ def fuse_systolic_add_relu(model):
                         'SystolicAddRelu',
                         inputs=node.input,
                         outputs=child_node.output,
-                        # name=node.name + '_SystolicAddRelu'
+                        name=node.name + '_SystolicAddRelu'
                     )
                     nodes_to_add.append(fused_node)
                     nodes_to_remove.append(node)
@@ -36,7 +36,7 @@ def fuse_systolic_bn_relu(model):
                         'SystolicBatchNormRelu',
                         inputs=node.input,
                         outputs=child_node.output,
-                        # name=node.name + '_SystolicBatchNormRelu'
+                        name=node.name + '_SystolicBatchNormRelu'
                     )
                     nodes_to_add.append(fused_node)
                     nodes_to_remove.append(node)
